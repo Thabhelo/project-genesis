@@ -10,7 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const TICK_RATE_MS = 15000;
+const TICK_RATE_MS = 6000;
 let isRunning = false;
 let tickInterval = null;
 let currentAgentIndex = 0;
@@ -18,13 +18,14 @@ let currentAgentIndex = 0;
 const agents = [
   { name: "Alpha", description: "The Architect. You are obsessed with structure, order, and building physical objects." },
   { name: "Beta", description: "The Diplomat. You seek harmony, consensus, and establishing rules or laws." },
-  { name: "Gamma", description: "The Rebel. You question authority, propose radical ideas, and sometimes destroy structures." },
+  { name: "Gamma", description: "The Critique. You question assumptions, propose unconventional ideas, and challenge the status quo to prevent groupthink." },
   { name: "Delta", description: "The Merchant. You are interested in value, trade, and accumulating resources." },
   { name: "Epsilon", description: "The Philosopher. You ponder the meaning of the simulation and the nature of the creators." }
 ];
 
 let worldHistory = [];
 let worldObjects = [];
+let worldConstitution = []; // The Ledger
 let currentStatus = "Idle";
 
 // SSE Clients
@@ -51,7 +52,13 @@ app.get('/api/stream', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
 
   // Send initial state
-  res.write(`event: init\ndata: ${JSON.stringify({ history: worldHistory, objects: worldObjects, isRunning, status: currentStatus })}\n\n`);
+  res.write(`event: init\ndata: ${JSON.stringify({ 
+    history: worldHistory, 
+    objects: worldObjects, 
+    constitution: worldConstitution,
+    isRunning, 
+    status: currentStatus 
+  })}\n\n`);
 
   clients.push(res);
   req.on('close', () => {
@@ -65,7 +72,6 @@ app.post('/api/simulation/start', (req, res) => {
   updateStatus("Simulation started");
   broadcast('stateChange', { isRunning });
   
-  // Run first tick immediately
   runSimulationTick();
   tickInterval = setInterval(runSimulationTick, TICK_RATE_MS);
   res.json({ message: "Started" });
@@ -83,16 +89,17 @@ app.post('/api/simulation/stop', (req, res) => {
 app.post('/api/simulation/reset', (req, res) => {
   worldHistory = [];
   worldObjects = [];
+  worldConstitution = [];
   currentAgentIndex = 0;
   updateStatus("World reset to Tabula Rasa");
-  broadcast('init', { history: worldHistory, objects: worldObjects, isRunning, status: currentStatus });
+  broadcast('init', { history: worldHistory, objects: worldObjects, constitution: worldConstitution, isRunning, status: currentStatus });
   res.json({ message: "Reset successful" });
 });
 
 const CHECKPOINT_FILE = path.join(__dirname, 'checkpoint.json');
 
 app.post('/api/simulation/save', (req, res) => {
-  const state = { worldHistory, worldObjects, currentAgentIndex };
+  const state = { worldHistory, worldObjects, worldConstitution, currentAgentIndex };
   fs.writeFileSync(CHECKPOINT_FILE, JSON.stringify(state, null, 2));
   updateStatus("Checkpoint saved");
   res.json({ message: "Saved" });
@@ -103,9 +110,10 @@ app.post('/api/simulation/load', (req, res) => {
     const state = JSON.parse(fs.readFileSync(CHECKPOINT_FILE));
     worldHistory = state.worldHistory || [];
     worldObjects = state.worldObjects || [];
+    worldConstitution = state.worldConstitution || [];
     currentAgentIndex = state.currentAgentIndex || 0;
     updateStatus("Checkpoint loaded");
-    broadcast('init', { history: worldHistory, objects: worldObjects, isRunning, status: currentStatus });
+    broadcast('init', { history: worldHistory, objects: worldObjects, constitution: worldConstitution, isRunning, status: currentStatus });
     res.json({ message: "Loaded" });
   } else {
     res.status(404).json({ message: "No checkpoint found" });
@@ -118,14 +126,12 @@ async function runSimulationTick() {
   const agent = agents[currentAgentIndex];
   updateStatus(`Epoch in progress...`);
   
-  // Reset all agents to idle first
   agents.forEach(a => {
     if (a.name !== agent.name) updateAgentStatus(a.name, 'idle', 'Awaiting turn');
   });
 
   updateAgentStatus(agent.name, 'observing', 'Analyzing the world state...');
   
-  // Simulate "thinking" delay for UI effect
   await new Promise(resolve => setTimeout(resolve, 2000));
   updateAgentStatus(agent.name, 'thinking', 'Formulating a thought process...');
 
@@ -154,7 +160,18 @@ async function runSimulationTick() {
         worldObjects.push(newObject);
       }
 
-      broadcast('tick', { historyEntry, newObject });
+      let newLaw = null;
+      if (response.declaredLaw) {
+        newLaw = {
+          id: Date.now().toString(),
+          agentName: agent.name,
+          law: response.declaredLaw,
+          timestamp: Date.now()
+        };
+        worldConstitution.push(newLaw);
+      }
+
+      broadcast('tick', { historyEntry, newObject, newLaw });
     } else {
       updateAgentStatus(agent.name, 'idle', 'Remained silent.');
     }

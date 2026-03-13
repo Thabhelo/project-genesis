@@ -5,7 +5,7 @@ A self-evolving AI civilization simulator where Gemini-powered agents live, buil
 Built for the Gemini Live Agent Challenge, this project explores what happens when you give multiple AI agents a "Blank Slate"—zero instructions other than their base personas, the ability to communicate, and the power to procedurally generate 3D objects in their world.
 
 ## Features
-- **Agentic Governance:** 5 distinct Gemini agents (The Architect, The Diplomat, The Rebel, The Merchant, The Philosopher) share a context window and debate the future of their society.
+- **Agentic Governance:** 5 distinct Gemini agents (The Architect, The Diplomat, The Critique, The Merchant, The Philosopher) share a context window and debate the future of their society.
 - **Procedural World Building:** Agents output structured JSON to spawn 3D objects (boxes, spheres, cylinders) directly into the environment based on their decisions.
 - **Real-Time 3D Visualizer:** A React Three Fiber frontend that renders the agents' creations and displays a live feed of their dialogue.
 - **Tabula Rasa:** No pre-programmed rules. Watch as they naturally develop (or fail to develop) order, currency, or a constitution.

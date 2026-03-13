@@ -4,7 +4,7 @@ import {
   Play, Square, RotateCcw, Save, Download, 
   LayoutGrid, Star, Clock, Users, Trash, Folder,
   Search, Bell, Plus, MoreHorizontal, Activity,
-  Box, Eye, Zap, Database, Github, Globe, Map
+  Box, Eye, Zap, Database, Github, Globe, Map, BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
@@ -12,7 +12,7 @@ import './App.css';
 const AGENTS = [
   { name: "Alpha", role: "The Architect", icon: Box, color: "text-[#818cf8]", bg: "bg-[#818cf8]/10", border: "border-[#818cf8]/20", gradient: "from-[#818cf8] to-[#6366f1]" },
   { name: "Beta", role: "The Diplomat", icon: Users, color: "text-[#c084fc]", bg: "bg-[#c084fc]/10", border: "border-[#c084fc]/20", gradient: "from-[#c084fc] to-[#a855f7]" },
-  { name: "Gamma", role: "The Rebel", icon: Zap, color: "text-[#f472b6]", bg: "bg-[#f472b6]/10", border: "border-[#f472b6]/20", gradient: "from-[#f472b6] to-[#d946ef]" },
+  { name: "Gamma", role: "The Critique", icon: Zap, color: "text-[#f472b6]", bg: "bg-[#f472b6]/10", border: "border-[#f472b6]/20", gradient: "from-[#f472b6] to-[#d946ef]" },
   { name: "Delta", role: "The Merchant", icon: Database, color: "text-[#fbbf24]", bg: "bg-[#fbbf24]/10", border: "border-[#fbbf24]/20", gradient: "from-[#fbbf24] to-[#f59e0b]" },
   { name: "Epsilon", role: "The Philosopher", icon: Eye, color: "text-[#34d399]", bg: "bg-[#34d399]/10", border: "border-[#34d399]/20", gradient: "from-[#34d399] to-[#10b981]" }
 ];
@@ -20,8 +20,10 @@ const AGENTS = [
 function App() {
   const [history, setHistory] = useState<any[]>([]);
   const [objects, setObjects] = useState<any[]>([]);
+  const [constitution, setConstitution] = useState<any[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [agentStates, setAgentStates] = useState<Record<string, {activity: string, details: string}>>({});
+  const [activeTab, setActiveTab] = useState("All Entities");
   
   const feedEndRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +38,7 @@ function App() {
       const data = JSON.parse(e.data);
       setHistory(data.history);
       setObjects(data.objects);
+      setConstitution(data.constitution || []);
       setIsRunning(data.isRunning);
     });
 
@@ -59,6 +62,9 @@ function App() {
       }
       if (data.newObject) {
         setObjects(prev => [...prev, data.newObject]);
+      }
+      if (data.newLaw) {
+        setConstitution(prev => [...prev, data.newLaw]);
       }
     });
 
@@ -100,20 +106,25 @@ function App() {
 
         {/* Navigation */}
         <div className="space-y-0.5 flex-1 overflow-y-auto">
-          <NavItem icon={<LayoutGrid size={16}/>} label="All Entities" active />
-          <NavItem icon={<Star size={16}/>} label="Milestones" />
-          <NavItem icon={<Clock size={16}/>} label="Timeline" />
-          <NavItem icon={<Users size={16}/>} label="Factions" />
-          <NavItem icon={<Trash size={16}/>} label="The Void" />
+          <NavItem icon={<LayoutGrid size={16}/>} label="All Entities" active={activeTab === "All Entities"} onClick={() => setActiveTab("All Entities")} />
+          <NavItem icon={<Star size={16}/>} label="Milestones" active={activeTab === "Milestones"} onClick={() => setActiveTab("Milestones")} />
+          <NavItem icon={<Clock size={16}/>} label="Timeline" active={activeTab === "Timeline"} onClick={() => setActiveTab("Timeline")} />
+          <NavItem icon={<Users size={16}/>} label="Factions" active={activeTab === "Factions"} onClick={() => setActiveTab("Factions")} />
+          <NavItem icon={<Trash size={16}/>} label="The Void" active={activeTab === "The Void"} onClick={() => setActiveTab("The Void")} />
+
+          <div className="mt-6 mb-2 px-3 text-[11px] font-medium text-[#71717a] uppercase tracking-wider">
+            Governance
+          </div>
+          <NavItem icon={<BookOpen size={16} className="text-[#f4f4f5]" />} label="Constitution" badge={constitution.length.toString()} active={activeTab === "Constitution"} onClick={() => setActiveTab("Constitution")} />
 
           <div className="mt-6 mb-2 px-3 text-[11px] font-medium text-[#71717a] uppercase tracking-wider">
             World Domains
           </div>
-          <NavItem icon={<Box size={16} className="text-[#818cf8]" />} label="Infrastructure" badge={getObjectCount('box').toString()} />
-          <NavItem icon={<Map size={16} className="text-[#c084fc]" />} label="Monuments" badge={getObjectCount('sphere').toString()} />
-          <NavItem icon={<Database size={16} className="text-[#fbbf24]" />} label="Resources" badge="45" />
-          <NavItem icon={<Folder size={16} className="text-[#34d399]" />} label="Nature" badge={getObjectCount('cylinder').toString()} />
-          <NavItem icon={<Folder size={16} className="text-[#f472b6]" />} label="Archives" badge={history.length.toString()} />
+          <NavItem icon={<Box size={16} className="text-[#818cf8]" />} label="Infrastructure" badge={getObjectCount('box').toString()} active={activeTab === "Infrastructure"} onClick={() => setActiveTab("Infrastructure")} />
+          <NavItem icon={<Map size={16} className="text-[#c084fc]" />} label="Monuments" badge={getObjectCount('sphere').toString()} active={activeTab === "Monuments"} onClick={() => setActiveTab("Monuments")} />
+          <NavItem icon={<Database size={16} className="text-[#fbbf24]" />} label="Resources" badge={(objects.length * 10).toString()} active={activeTab === "Resources"} onClick={() => setActiveTab("Resources")} />
+          <NavItem icon={<Folder size={16} className="text-[#34d399]" />} label="Nature" badge={getObjectCount('cylinder').toString()} active={activeTab === "Nature"} onClick={() => setActiveTab("Nature")} />
+          <NavItem icon={<Folder size={16} className="text-[#f472b6]" />} label="Archives" badge={history.length.toString()} active={activeTab === "Archives"} onClick={() => setActiveTab("Archives")} />
         </div>
 
         {/* Bottom Section */}
@@ -253,6 +264,32 @@ function App() {
               </div>
             </div>
 
+            {/* Constitution Ledger */}
+            <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-medium text-[#f4f4f5] text-[14px]">Constitution Ledger</h3>
+                <span className="text-[12px] text-[#71717a]">{constitution.length} Articles</span>
+              </div>
+              <div className="space-y-3 max-h-[160px] overflow-y-auto custom-scrollbar pr-2">
+                {constitution.length === 0 ? (
+                  <div className="text-[12px] text-[#71717a] text-center italic mt-2">No laws established yet.</div>
+                ) : (
+                  constitution.map((c, i) => {
+                    const agent = AGENTS.find(a => a.name === c.agentName) || AGENTS[0];
+                    return (
+                      <div key={c.id} className="bg-[#18181b] rounded-md p-3 border border-[#27272a]">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-[10px] font-bold text-[#f4f4f5] uppercase tracking-wider">Article {i + 1}</span>
+                          <span className={`text-[10px] font-medium ${agent.color}`}>by {c.agentName}</span>
+                        </div>
+                        <p className="text-[12px] text-[#a1a1aa] leading-relaxed">"{c.law}"</p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
             {/* Active Agents */}
             <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5">
               <div className="flex justify-between items-center mb-4">
@@ -326,10 +363,12 @@ function App() {
   );
 }
 
-function NavItem({ icon, label, active, badge }: { icon: React.ReactNode, label: string, active?: boolean, badge?: string }) {
+function NavItem({ icon, label, active, badge, onClick }: { icon: React.ReactNode, label: string, active?: boolean, badge?: string, onClick?: () => void }) {
   return (
-    <div className={`flex items-center justify-between px-3 py-1.5 rounded-md cursor-pointer transition-colors ${
-      active ? 'bg-[#18181b] text-[#f4f4f5] font-medium' : 'text-[#a1a1aa] hover:text-[#f4f4f5] hover:bg-[#18181b]'
+    <div 
+      onClick={onClick}
+      className={`flex items-center justify-between px-3 py-1.5 rounded-md cursor-pointer transition-colors ${
+      active ? 'bg-[#18181b] text-[#f4f4f5] font-medium shadow-sm' : 'text-[#a1a1aa] hover:text-[#f4f4f5] hover:bg-[#18181b]'
     }`}>
       <div className="flex items-center gap-3">
         {icon}
