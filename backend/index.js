@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 const { db } = require('./firebaseAdmin');
 const { generateAgentResponse } = require('./geminiService');
@@ -8,7 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const TICK_RATE_MS = 15000; // 15 seconds per simulation tick to avoid rate limits
+const TICK_RATE_MS = 15000;
 let isRunning = false;
 let tickInterval = null;
 let currentAgentIndex = 0;
@@ -21,77 +23,146 @@ const agents = [
   { name: "Epsilon", description: "The Philosopher. You ponder the meaning of the simulation and the nature of the creators." }
 ];
 
-// In-memory state for the MVS (will be synced to Firestore)
 let worldHistory = [];
 let worldObjects = [];
+let currentStatus = "Idle";
+
+// SSE Clients
+let clients = [];
+
+function broadcast(event, data) {
+  clients.forEach(client => {
+    client.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  });
+}
+
+function updateStatus(status) {
+  currentStatus = status;
+  broadcast('status', { status });
+}
+
+function updateAgentStatus(agentName, activity, details) {
+  broadcast('agentStatus', { agentName, activity, details });
+}
+
+app.get('/api/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  // Send initial state
+  res.write(`event: init\ndata: ${JSON.stringify({ history: worldHistory, objects: worldObjects, isRunning, status: currentStatus })}\n\n`);
+
+  clients.push(res);
+  req.on('close', () => {
+    clients = clients.filter(c => c !== res);
+  });
+});
 
 app.post('/api/simulation/start', (req, res) => {
-  if (isRunning) return res.status(400).json({ message: "Simulation already running" });
+  if (isRunning) return res.status(400).json({ message: "Already running" });
   isRunning = true;
+  updateStatus("Simulation started");
+  broadcast('stateChange', { isRunning });
+  
+  // Run first tick immediately
+  runSimulationTick();
   tickInterval = setInterval(runSimulationTick, TICK_RATE_MS);
-  res.json({ message: "Simulation started" });
+  res.json({ message: "Started" });
 });
 
 app.post('/api/simulation/stop', (req, res) => {
-  if (!isRunning) return res.status(400).json({ message: "Simulation not running" });
+  if (!isRunning) return res.status(400).json({ message: "Not running" });
   isRunning = false;
   clearInterval(tickInterval);
-  res.json({ message: "Simulation stopped" });
+  updateStatus("Simulation stopped");
+  broadcast('stateChange', { isRunning });
+  res.json({ message: "Stopped" });
 });
 
-app.get('/api/world', (req, res) => {
-  res.json({ history: worldHistory, objects: worldObjects });
+app.post('/api/simulation/reset', (req, res) => {
+  worldHistory = [];
+  worldObjects = [];
+  currentAgentIndex = 0;
+  updateStatus("World reset to Tabula Rasa");
+  broadcast('init', { history: worldHistory, objects: worldObjects, isRunning, status: currentStatus });
+  res.json({ message: "Reset successful" });
+});
+
+const CHECKPOINT_FILE = path.join(__dirname, 'checkpoint.json');
+
+app.post('/api/simulation/save', (req, res) => {
+  const state = { worldHistory, worldObjects, currentAgentIndex };
+  fs.writeFileSync(CHECKPOINT_FILE, JSON.stringify(state, null, 2));
+  updateStatus("Checkpoint saved");
+  res.json({ message: "Saved" });
+});
+
+app.post('/api/simulation/load', (req, res) => {
+  if (fs.existsSync(CHECKPOINT_FILE)) {
+    const state = JSON.parse(fs.readFileSync(CHECKPOINT_FILE));
+    worldHistory = state.worldHistory || [];
+    worldObjects = state.worldObjects || [];
+    currentAgentIndex = state.currentAgentIndex || 0;
+    updateStatus("Checkpoint loaded");
+    broadcast('init', { history: worldHistory, objects: worldObjects, isRunning, status: currentStatus });
+    res.json({ message: "Loaded" });
+  } else {
+    res.status(404).json({ message: "No checkpoint found" });
+  }
 });
 
 async function runSimulationTick() {
-  console.log("--- Simulation Tick ---");
+  if (!isRunning) return;
+  
   const agent = agents[currentAgentIndex];
-  console.log(`Agent ${agent.name} is thinking...`);
+  updateStatus(`Epoch in progress...`);
+  
+  // Reset all agents to idle first
+  agents.forEach(a => {
+    if (a.name !== agent.name) updateAgentStatus(a.name, 'idle', 'Awaiting turn');
+  });
 
-  // Get recent history
+  updateAgentStatus(agent.name, 'observing', 'Analyzing the world state...');
+  
+  // Simulate "thinking" delay for UI effect
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  updateAgentStatus(agent.name, 'thinking', 'Formulating a thought process...');
+
   const recentHistory = worldHistory.slice(-10);
 
-  const response = await generateAgentResponse(agent, recentHistory, worldObjects);
-  
-  if (response) {
-    console.log(`[${agent.name}]: ${response.message}`);
+  try {
+    const response = await generateAgentResponse(agent, recentHistory, worldObjects);
     
-    // Add to history
-    const historyEntry = {
-      agentName: agent.name,
-      message: response.message,
-      timestamp: Date.now()
-    };
-    worldHistory.push(historyEntry);
-    
-    // Sync to DB
-    try {
-      await db.collection('history').add(historyEntry);
-    } catch (e) {
-      console.error("DB Error:", e);
-    }
-
-    // Handle build action
-    if (response.buildAction && response.buildAction.type !== "none") {
-      const newObject = {
-        id: Date.now().toString(),
-        creator: agent.name,
-        ...response.buildAction
-      };
-      worldObjects.push(newObject);
-      console.log(`[${agent.name}] built a ${newObject.type}`);
+    if (response) {
+      updateAgentStatus(agent.name, 'acted', 'Action completed.');
       
-      try {
-        await db.collection('objects').add(newObject);
-      } catch (e) {
-        console.error("DB Error:", e);
+      const historyEntry = {
+        agentName: agent.name,
+        message: response.message,
+        timestamp: Date.now()
+      };
+      worldHistory.push(historyEntry);
+      
+      let newObject = null;
+      if (response.buildAction && response.buildAction.type !== "none") {
+        newObject = {
+          id: Date.now().toString(),
+          creator: agent.name,
+          ...response.buildAction
+        };
+        worldObjects.push(newObject);
       }
+
+      broadcast('tick', { historyEntry, newObject });
+    } else {
+      updateAgentStatus(agent.name, 'idle', 'Remained silent.');
     }
-  } else {
-    console.log(`Agent ${agent.name} failed to respond.`);
+  } catch (error) {
+    console.error("Tick Error:", error);
+    updateAgentStatus(agent.name, 'error', 'Neural link interrupted.');
   }
 
-  // Next agent
   currentAgentIndex = (currentAgentIndex + 1) % agents.length;
 }
 
