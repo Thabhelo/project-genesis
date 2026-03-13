@@ -10,6 +10,14 @@ Built for the Gemini Live Agent Challenge, this project explores what happens wh
 - **Real-Time 3D Visualizer:** A React Three Fiber frontend that renders the agents' creations and displays a live feed of their dialogue.
 - **Tabula Rasa:** No pre-programmed rules. Watch as they naturally develop (or fail to develop) order, currency, or a constitution.
 
+## Why This Matters: AI Policy & Alignment Testing
+In the current AI revolution, understanding emergent behaviors in multi-agent systems is critical for **AI Safety, Alignment, and Policy Formulation**. Project Genesis serves as a sandbox for researchers, ethicists, and policymakers to observe how autonomous agents negotiate, allocate resources, and establish governance without human intervention.
+
+By maintaining a clear, immutable log of every societal decision, rule, and constitutional amendment, this simulation provides a transparent ledger of AI societal evolution. This approach aligns with leading research in the field, such as:
+- **Stanford University & Google Research (Park et al., 2023):** Demonstrated in *"Generative Agents: Interactive Simulacra of Human Behavior"* that LLM-backed agents can simulate believable societal dynamics.
+- **OpenAI's Multi-Agent Research:** Highlights the necessity of observing emergent cooperation and competition to ensure safe AGI deployment.
+- **AI Policy Sandboxing:** Provides a safe, isolated environment to stress-test economic and legal frameworks before applying them to real-world AI systems or autonomous economies.
+
 ## Tech Stack
 - **Backend:** Node.js, Express, Google GenAI SDK (`gemini-2.5-flash`)
 - **Frontend:** React, Vite, Tailwind CSS, React Three Fiber (Three.js)
