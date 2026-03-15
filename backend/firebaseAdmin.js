@@ -1,25 +1,35 @@
 require('dotenv').config();
 const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
 // Initialize Firebase Admin SDK
-// You need to download the serviceAccountKey.json from Firebase Console
-// Project Settings > Service Accounts > Generate New Private Key
+// 1. serviceAccountKey.json (local / explicit key)
+// 2. Application Default Credentials (Cloud Run, GCE, etc.)
 let db;
 try {
-  const serviceAccount = require('./serviceAccountKey.json');
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-  db = admin.firestore();
-  console.log("Firebase Admin initialized successfully.");
+  const keyPath = path.join(__dirname, 'serviceAccountKey.json');
+  if (fs.existsSync(keyPath)) {
+    const serviceAccount = require(keyPath);
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    db = admin.firestore();
+    console.log("Firebase Admin initialized (service account key).");
+  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.K_SERVICE) {
+    // Cloud Run sets K_SERVICE; use Application Default Credentials
+    admin.initializeApp({ credential: admin.credential.applicationDefault() });
+    db = admin.firestore();
+    console.log("Firebase Admin initialized (Application Default Credentials).");
+  } else {
+    throw new Error('No credentials');
+  }
 } catch (error) {
-  console.warn("Firebase Admin: No serviceAccountKey.json found. State will not persist across restarts. See README for Firestore setup.");
-  // Mock DB for local testing without Firebase
+  console.warn("Firebase Admin: No credentials found. State will not persist. See README for Firestore setup.");
   db = {
     collection: () => ({
-      add: async (data) => console.log("Mock DB Add:", data),
+      add: async () => {},
       get: async () => ({ docs: [] }),
-      onSnapshot: () => {}
+      onSnapshot: () => {},
+      doc: () => ({ get: async () => ({ exists: false }), set: async () => {} })
     })
   };
 }

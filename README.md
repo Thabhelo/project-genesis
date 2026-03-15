@@ -67,3 +67,29 @@ To persist simulation state across server restarts:
 5. Restart the backend. You should see: `Firestore persistence enabled.`
 
 The backend loads state on startup and saves after each agent tick. No frontend Firebase config is needed—all persistence is server-side.
+
+## Deployment
+
+### Google Cloud Run (recommended)
+Deploy both frontend and backend to Cloud Run via gcloud CLI:
+
+```bash
+# Prerequisites: gcloud CLI, authenticated (gcloud auth login)
+gcloud config set project YOUR_PROJECT_ID
+
+# Deploy (set GEMINI_API_KEY first for agents to work)
+export GEMINI_API_KEY=your_gemini_key
+./scripts/deploy-cloudrun.sh
+```
+
+The script deploys the backend first, then the frontend (with the backend URL baked in). Firestore works via Application Default Credentials when the Firebase project matches your GCP project—ensure the Cloud Run service account has Firestore permissions.
+
+To set secrets after deployment:
+```bash
+gcloud run services update project-genesis-backend --region us-central1 \
+  --set-env-vars GEMINI_API_KEY=your_key
+```
+
+### Alternative: Vercel (frontend) + Railway/Render (backend)
+- **Frontend:** `cd frontend && vercel --prod` — set `VITE_API_URL` in Vercel env vars
+- **Backend:** Deploy `backend` folder to Railway or Render

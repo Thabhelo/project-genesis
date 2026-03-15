@@ -9,7 +9,8 @@ const { generateImage } = require('./imageService');
 const { saveState, loadState, appendEvent, isFirestore } = require('./firestoreService');
 
 const app = express();
-app.use(cors());
+// Allow all origins (frontend on Cloud Run has dynamic URL)
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 const TICK_RATE_MS = 6000;

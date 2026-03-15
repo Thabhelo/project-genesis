@@ -130,6 +130,13 @@ function App() {
       )
     : history;
 
+  const historyByAgent = AGENTS.reduce((acc, a) => {
+    acc[a.name] = history.filter(h => h.agentName === a.name);
+    return acc;
+  }, {} as Record<string, typeof history>);
+
+  const objectsByType = (type: string) => objects.filter(o => o.type === type);
+
   return (
     <div className="flex h-screen w-screen bg-[#09090b] text-[#f4f4f5] font-sans overflow-hidden text-[13px]">
       
@@ -332,136 +339,271 @@ function App() {
               </div>
             </div>
 
-            {archive.length > 0 && (
-              <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium text-[#f4f4f5] text-[14px]">Shared Archive</h3>
-                  <span className="text-[12px] text-[#71717a]">{archive.length} entries</span>
-                </div>
-                <div className="space-y-2 max-h-[100px] overflow-y-auto custom-scrollbar pr-2">
-                  {archive.slice(-5).reverse().map((a: any) => (
-                    <div key={a.id} className="bg-[#18181b] rounded px-2 py-1.5 text-[11px]">
-                      <span className="text-[#818cf8] font-medium">{a.key}:</span>{' '}
-                      <span className="text-[#a1a1aa] truncate block">{a.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {images.length > 0 && (
-              <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium text-[#f4f4f5] text-[14px]">Visual Artifacts</h3>
-                  <span className="text-[12px] text-[#71717a]">{images.length}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 max-h-[140px] overflow-y-auto custom-scrollbar">
-                  {images.slice(-4).reverse().map((img: any) => (
-                    <div key={img.id} className="rounded overflow-hidden border border-[#27272a] bg-[#18181b]">
-                      <img 
-                        src={`data:image/png;base64,${img.imageBase64}`} 
-                        alt={img.prompt} 
-                        className="w-full h-16 object-cover"
-                      />
-                      <p className="text-[10px] text-[#71717a] px-1 py-0.5 truncate" title={img.prompt}>{img.prompt}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-medium text-[#f4f4f5] text-[14px]">Constitution Ledger</h3>
-                <span className="text-[12px] text-[#71717a]">{constitution.length} Articles</span>
-              </div>
-              <div className="space-y-3 max-h-[160px] overflow-y-auto custom-scrollbar pr-2">
-                {constitution.length === 0 ? (
-                  <div className="text-[12px] text-[#71717a] text-center italic mt-2">No laws established yet.</div>
-                ) : (
-                  constitution.map((c, i) => {
-                    const agent = AGENTS.find(a => a.name === c.agentName) || AGENTS[0];
-                    return (
-                      <div key={c.id} className="bg-[#18181b] rounded-md p-3 border border-[#27272a]">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-[10px] font-bold text-[#f4f4f5] uppercase tracking-wider">Article {i + 1}</span>
-                          <span className={`text-[10px] font-medium ${agent.color}`}>by {c.agentName}</span>
-                        </div>
-                        <p className="text-[12px] text-[#a1a1aa] leading-relaxed">"{c.law}"</p>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-medium text-[#f4f4f5] text-[14px]">Citizens</h3>
-                <span className="text-[12px] text-[#71717a]">5 active</span>
-              </div>
-              <div className="flex items-center">
-                {AGENTS.map((agent) => (
-                  <div 
-                    key={agent.name}
-                    className={`w-8 h-8 rounded-full border-2 border-[#09090b] flex items-center justify-center bg-gradient-to-br ${agent.gradient} -ml-2 first:ml-0`}
-                    title={agent.name}
-                  >
-                    <span className="text-white text-[10px] font-medium">{agent.name[0]}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
-              <div className="flex justify-between items-center mb-5 shrink-0">
-                <h3 className="font-medium text-[#f4f4f5] text-[14px]">Recent Activity</h3>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
-                {filteredHistory.length === 0 ? (
-                  <div className="text-[13px] text-[#71717a] text-center mt-4">
-                    {searchQuery ? 'No matches.' : 'No activity recorded.'}
-                  </div>
-                ) : (
-                  <AnimatePresence initial={false}>
-                    {[...filteredHistory].reverse().map((entry: any, i: number) => {
-                      const agent = AGENTS.find(a => a.name === entry.agentName) || AGENTS[0];
-                      return (
-                        <motion.div 
-                          key={i} 
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex gap-3 items-start"
-                        >
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br ${agent.gradient}`}>
-                            <span className="text-white text-[10px] font-medium">{agent.name[0]}</span>
-                          </div>
-                          
-                          <div className="flex-1 min-w-0 pt-0.5">
-                            <p className="text-[13px] leading-snug">
-                              <span className="font-medium text-[#f4f4f5]">{entry.agentName}</span>{' '}
-                              <span className="text-[#71717a]">stated</span>{' '}
-                              <span className="text-[#f4f4f5] block mt-0.5 truncate">"{entry.message}"</span>
-                            </p>
-                            <span className="text-[11px] text-[#71717a] block mt-1">
-                              {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                )}
-                <div ref={feedEndRef} />
-              </div>
-            </div>
+            <TabContent
+              activeTab={activeTab}
+              filteredHistory={filteredHistory}
+              searchQuery={searchQuery}
+              constitution={constitution}
+              archive={archive}
+              images={images}
+              objectsByType={objectsByType}
+              historyByAgent={historyByAgent}
+              resources={resources}
+              AGENTS={AGENTS}
+              feedEndRef={feedEndRef}
+              getObjectCount={getObjectCount}
+            />
 
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+type AgentDef = { name: string; role: string; icon: any; color: string; bg: string; border: string; gradient: string };
+
+function TabContent({
+  activeTab,
+  filteredHistory,
+  searchQuery,
+  constitution,
+  archive,
+  images,
+  objectsByType,
+  historyByAgent,
+  resources,
+  AGENTS,
+  feedEndRef,
+  getObjectCount
+}: {
+  activeTab: string;
+  filteredHistory: any[];
+  searchQuery: string;
+  constitution: any[];
+  archive: any[];
+  images: any[];
+  objectsByType: (type: string) => any[];
+  historyByAgent: Record<string, any[]>;
+  resources: number;
+  AGENTS: AgentDef[];
+  feedEndRef: React.RefObject<HTMLDivElement | null>;
+  getObjectCount: (type: string) => number;
+}) {
+  const getCount = getObjectCount;
+  const renderActivityFeed = () => (
+    <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+      {filteredHistory.length === 0 ? (
+        <div className="text-[13px] text-[#71717a] text-center mt-4">
+          {searchQuery ? 'No matches.' : 'No activity recorded.'}
+        </div>
+      ) : (
+        <AnimatePresence initial={false}>
+          {[...filteredHistory].reverse().map((entry: any, i: number) => {
+            const agent = AGENTS.find((a: AgentDef) => a.name === entry.agentName) || AGENTS[0];
+            return (
+              <motion.div key={entry.timestamp ?? i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 items-start">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br ${agent.gradient}`}>
+                  <span className="text-white text-[10px] font-medium">{agent.name[0]}</span>
+                </div>
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <p className="text-[13px] leading-snug">
+                    <span className="font-medium text-[#f4f4f5]">{entry.agentName}</span>{' '}
+                    <span className="text-[#71717a]">stated</span>{' '}
+                    <span className="text-[#f4f4f5] block mt-0.5 truncate">&quot;{entry.message}&quot;</span>
+                  </p>
+                  <span className="text-[11px] text-[#71717a] block mt-1">
+                    {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      )}
+      <div ref={feedEndRef} />
+    </div>
+  );
+
+  const renderConstitution = () => (
+    <div className="space-y-3 overflow-y-auto custom-scrollbar pr-2 max-h-[400px]">
+      {constitution.length === 0 ? (
+        <div className="text-[12px] text-[#71717a] text-center italic mt-2">No laws established yet.</div>
+      ) : (
+        constitution.map((c, i) => {
+          const agent = AGENTS.find((a: AgentDef) => a.name === c.agentName) || AGENTS[0];
+          return (
+            <div key={c.id} className="bg-[#18181b] rounded-md p-3 border border-[#27272a]">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[10px] font-bold text-[#f4f4f5] uppercase tracking-wider">Article {i + 1}</span>
+                <span className={`text-[10px] font-medium ${agent.color}`}>by {c.agentName}</span>
+              </div>
+              <p className="text-[12px] text-[#a1a1aa] leading-relaxed">&quot;{c.law}&quot;</p>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+
+  const renderObjectList = (type: string, label: string) => {
+    const items = objectsByType(type);
+    return (
+      <div className="space-y-2 overflow-y-auto custom-scrollbar pr-2 max-h-[400px]">
+        {items.length === 0 ? (
+          <div className="text-[12px] text-[#71717a] text-center italic mt-2">No {label.toLowerCase()} yet.</div>
+        ) : (
+          items.map((obj: any) => (
+            <div key={obj.id} className="bg-[#18181b] rounded-md p-3 border border-[#27272a] text-[12px]">
+              <span className="text-[#818cf8] font-medium">{obj.type}</span>
+              {obj.creator && <span className="text-[#71717a] ml-2">by {obj.creator}</span>}
+              {obj.position && <span className="text-[#a1a1aa] block mt-1">[{obj.position.join(', ')}]</span>}
+            </div>
+          ))
+        )}
+      </div>
+    );
+  };
+
+  const content = (() => {
+    switch (activeTab) {
+      case 'All Entities':
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">Recent Activity</h3>
+            {renderActivityFeed()}
+          </div>
+        );
+      case 'Milestones':
+      case 'Constitution':
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">Constitution Ledger ({constitution.length} Articles)</h3>
+            {renderConstitution()}
+          </div>
+        );
+      case 'Timeline':
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">Timeline (chronological)</h3>
+            {renderActivityFeed()}
+          </div>
+        );
+      case 'Factions':
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0 overflow-y-auto">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">Activity by Faction</h3>
+            <div className="space-y-4">
+              {AGENTS.map((agent: AgentDef) => {
+                const entries = historyByAgent[agent.name] || [];
+                return (
+                  <div key={agent.name} className="border border-[#27272a] rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${agent.gradient} flex items-center justify-center`}>
+                        <span className="text-white text-[10px] font-medium">{agent.name[0]}</span>
+                      </div>
+                      <span className="font-medium text-[#f4f4f5]">{agent.name}</span>
+                      <span className="text-[11px] text-[#71717a]">({entries.length} entries)</span>
+                    </div>
+                    <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
+                      {entries.slice(-5).reverse().map((e: any, i: number) => (
+                        <p key={i} className="text-[11px] text-[#a1a1aa] truncate">&quot;{e.message}&quot;</p>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      case 'The Void':
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">The Void</h3>
+            <div className="text-[12px] text-[#71717a] italic text-center mt-8">Nothing has been discarded to the void.</div>
+          </div>
+        );
+      case 'Infrastructure':
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">Infrastructure ({getCount('box')} constructs)</h3>
+            {renderObjectList('box', 'Infrastructure')}
+          </div>
+        );
+      case 'Monuments':
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">Monuments ({getCount('sphere')} constructs)</h3>
+            {renderObjectList('sphere', 'Monuments')}
+          </div>
+        );
+      case 'Nature':
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">Nature ({getCount('cylinder')} constructs)</h3>
+            {renderObjectList('cylinder', 'Nature')}
+          </div>
+        );
+      case 'Resources':
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">Materials</h3>
+            <div className="space-y-4">
+              <div className="bg-[#18181b] rounded-lg p-4 border border-[#27272a]">
+                <div className="flex justify-between text-[14px] mb-2">
+                  <span className="text-[#a1a1aa]">Available</span>
+                  <span className="font-medium text-[#f4f4f5]">{resources} / 1000</span>
+                </div>
+                <div className="h-2 bg-[#27272a] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#f4f4f5] rounded-full transition-all" style={{ width: `${(resources / 1000) * 100}%` }} />
+                </div>
+              </div>
+              <p className="text-[12px] text-[#71717a]">1 material consumed per construct built.</p>
+            </div>
+          </div>
+        );
+      case 'Archives':
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">Shared Archive ({archive.length} entries)</h3>
+            <div className="space-y-2 overflow-y-auto custom-scrollbar pr-2 max-h-[400px]">
+              {archive.length === 0 ? (
+                <div className="text-[12px] text-[#71717a] italic">No archive entries yet.</div>
+              ) : (
+                archive.slice().reverse().map((a: any) => (
+                  <div key={a.id} className="bg-[#18181b] rounded px-2 py-1.5 text-[11px]">
+                    <span className="text-[#818cf8] font-medium">{a.key}:</span>{' '}
+                    <span className="text-[#a1a1aa] truncate block">{a.value}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            {images.length > 0 && (
+              <>
+                <h3 className="font-medium text-[#f4f4f5] text-[14px] mt-6 mb-2">Visual Artifacts ({images.length})</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {images.slice(-4).reverse().map((img: any) => (
+                    <div key={img.id} className="rounded overflow-hidden border border-[#27272a] bg-[#18181b]">
+                      <img src={`data:image/png;base64,${img.imageBase64}`} alt={img.prompt} className="w-full h-16 object-cover" />
+                      <p className="text-[10px] text-[#71717a] px-1 py-0.5 truncate" title={img.prompt}>{img.prompt}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      default:
+        return (
+          <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
+            <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-4">Recent Activity</h3>
+            {renderActivityFeed()}
+          </div>
+        );
+    }
+  })();
+
+  return content;
 }
 
 function NavItem({ icon, label, active, badge, onClick }: { icon: React.ReactNode, label: string, active?: boolean, badge?: string, onClick?: () => void }) {

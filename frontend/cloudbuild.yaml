@@ -1,0 +1,26 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'VITE_API_URL=${_BACKEND_URL}'
+      - '-t'
+      - 'gcr.io/${PROJECT_ID}/project-genesis-frontend'
+      - '.'
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/${PROJECT_ID}/project-genesis-frontend']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'project-genesis-frontend'
+      - '--image=gcr.io/${PROJECT_ID}/project-genesis-frontend'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+substitutions:
+  _REGION: us-central1
+  _BACKEND_URL: ''
+options:
+  logging: CLOUD_LOGGING_ONLY

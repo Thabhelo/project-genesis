@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sky, Stars, ContactShadows } from '@react-three/drei';
 import gsap from 'gsap';
@@ -49,7 +49,7 @@ export function World3D({ objects }: WorldProps) {
   return (
     <Canvas 
       camera={{ position: [15, 15, 15], fov: 45 }} 
-      shadows={{ type: 'PCF' }} // Fixes PCFSoftShadowMap warning
+      shadows
     >
       <color attach="background" args={['#050505']} />
       <Sky sunPosition={[100, 20, 100]} turbidity={0.1} rayleigh={0.5} />
