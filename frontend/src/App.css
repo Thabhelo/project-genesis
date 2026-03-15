@@ -1,12 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #000000;
-  --color-surface: #09090b;
-  --color-surface-hover: #18181b;
-  --color-border: #27272a;
-  --color-text-main: #f4f4f5;
-  --color-text-muted: #a1a1aa;
+  --color-background: #E0E5EC;
+  --color-surface: #E0E5EC;
+  --color-border: transparent;
+  --color-text-main: #3D4852;
+  --color-text-muted: #6B7280;
+  --color-accent: #6C63FF;
+  --color-accent-light: #8B84FF;
+  --color-accent-teal: #38B2AC;
 }
 
 html, body, #root {
@@ -14,52 +16,109 @@ html, body, #root {
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: var(--color-background);
-  color: var(--color-text-main);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  background-color: #E0E5EC;
+  color: #3D4852;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar for the feed to match Square UI */
+.font-display {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+/* ──────────────────────────────────────────────
+   Neumorphic scrollbars
+────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #E0E5EC;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: linear-gradient(135deg, #6C63FF, #38B2AC);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: linear-gradient(135deg, #8B84FF, #4DC8C2);
 }
 
-/* Resize handles - visible bar between panels */
+/* ──────────────────────────────────────────────
+   Resize handle — subtle groove on neumorphic bg
+────────────────────────────────────────────── */
 [data-panel-resize-handle-id] {
   flex-shrink: 0;
-  background: #27272a;
+  background: #E0E5EC;
+  transition: background 0.2s;
 }
+
 [data-panel-resize-handle-id]:hover {
-  background: #3f3f46;
+  background: #d4dae7;
 }
+
 [data-panel-resize-handle-id][data-resize-handle-state="drag"] {
-  background: #818cf8;
+  background: linear-gradient(to bottom, #6C63FF33, #6C63FF55, #6C63FF33);
 }
 
+/* ──────────────────────────────────────────────
+   Glassmorphic panel — for thinking / status layers
+────────────────────────────────────────────── */
 .glass-panel {
-  background: rgba(9, 9, 11, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.38);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow:
+    9px 9px 16px rgb(163 177 198 / 0.6),
+    -9px -9px 16px rgba(255 255 255 / 0.55);
 }
 
+/* Deeper glass for the modal */
+.glass-modal {
+  background: rgba(224, 229, 236, 0.88);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow:
+    20px 20px 40px rgb(163 177 198 / 0.7),
+    -20px -20px 40px rgba(255 255 255 / 0.65);
+}
+
+/* ──────────────────────────────────────────────
+   Animations
+────────────────────────────────────────────── */
 @keyframes shimmer {
-  0% { background-position: 200% 50%; }
+  0%   { background-position: 200% 50%; }
   100% { background-position: -200% 50%; }
 }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(108, 99, 255, 0.35); }
+  70%  { box-shadow: 0 0 0 8px rgba(108, 99, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(108, 99, 255, 0); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  [style*="shimmer"] { animation: none !important; }
+  .animate-float,
+  .animate-pulse-ring,
+  [style*="shimmer"] {
+    animation: none !important;
+  }
 }
