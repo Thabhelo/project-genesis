@@ -392,7 +392,7 @@ function App() {
           <Group orientation="horizontal" className="flex-1 min-h-0 gap-0">
 
             {/* ── Left: Nav sidebar ── */}
-            <Panel id="nav" defaultSize={12} minSize={8} maxSize={22} onResize={(size) => setNavPct(size)} className="min-w-0 flex flex-col overflow-hidden">
+            <Panel id="nav" defaultSize={12} minSize={8} maxSize={22} onResize={(size) => setNavPct(size.asPercentage)} className="min-w-0 flex flex-col overflow-hidden">
               <div className={`h-full flex flex-col p-3 bg-[#E0E5EC] ${NEU_RAISED} rounded-2xl mr-2 overflow-hidden`}>
                 {/* Logo */}
                 <div className="flex items-center gap-2.5 px-2 mb-5 mt-1 shrink-0">
