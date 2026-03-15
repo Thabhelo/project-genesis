@@ -42,12 +42,13 @@ if [ -n "$ELEVENLABS_API_KEY" ]; then
   gcloud run services update project-genesis-backend --region "$REGION" --update-env-vars "ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY" --project "$PROJECT_ID" --quiet
 fi
 
-# Deploy frontend (with backend URL baked in at build time)
+# Deploy frontend (with backend URL and optional Firebase config baked in at build time)
 echo ""
 echo "=== Building and deploying frontend ==="
 cd "$ROOT/frontend"
+# Optional: export VITE_FIREBASE_* from frontend/.env for Google OAuth in production
 gcloud builds submit --config=cloudbuild.yaml \
-  --substitutions="_REGION=$REGION,_BACKEND_URL=$BACKEND_URL" \
+  --substitutions="_REGION=$REGION,_BACKEND_URL=$BACKEND_URL,_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY:-},_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN:-},_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID:-},_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET:-},_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID:-},_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID:-}" \
   --project="$PROJECT_ID"
 
 FRONTEND_URL=$(gcloud run services describe project-genesis-frontend --region "$REGION" --format 'value(status.url)' --project "$PROJECT_ID")

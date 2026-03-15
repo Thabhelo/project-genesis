@@ -3,9 +3,10 @@ import { World3D } from './components/World3D';
 import { 
   Play, Square, RotateCcw, Save, Download, 
   LayoutGrid, Star, Clock, Users, Trash, Folder,
-  Search, Activity,
+  Search, Activity, LogIn, LogOut,
   Box, Eye, Zap, Database, Github, Globe, Map, BookOpen, DownloadCloud
 } from 'lucide-react';
+import { useAuth } from './hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 
@@ -22,6 +23,7 @@ const AGENTS = [
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 function App() {
+  const { user, loading: authLoading, authReady, signInWithGoogle, signOut } = useAuth();
   const [history, setHistory] = useState<any[]>([]);
   const [objects, setObjects] = useState<any[]>([]);
   const [constitution, setConstitution] = useState<any[]>([]);
@@ -195,11 +197,35 @@ function App() {
           </div>
 
           <div className="flex items-center gap-3 px-2 py-2 rounded-md mt-2">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Creator" alt="Creator" className="w-7 h-7 rounded-full bg-[#27272a]" />
-            <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-medium text-[#f4f4f5] truncate leading-tight">The Creator</div>
-              <div className="text-[11px] text-[#71717a] truncate leading-tight">admin@genesis.ai</div>
-            </div>
+            {authReady ? (
+              user ? (
+                <>
+                  <img src={user.photoURL || undefined} alt="" className="w-7 h-7 rounded-full bg-[#27272a] object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium text-[#f4f4f5] truncate leading-tight">{user.displayName || 'Signed in'}</div>
+                    <div className="text-[11px] text-[#71717a] truncate leading-tight">{user.email}</div>
+                  </div>
+                  <button onClick={signOut} className="p-1.5 rounded-md hover:bg-[#27272a] text-[#71717a] hover:text-[#f4f4f5] transition-colors" title="Sign out">
+                    <LogOut size={14} />
+                  </button>
+                </>
+              ) : authLoading ? (
+                <div className="text-[12px] text-[#71717a]">Loading...</div>
+              ) : (
+                <button onClick={signInWithGoogle} className="flex items-center gap-2 w-full px-3 py-2 rounded-md bg-[#18181b] border border-[#27272a] hover:bg-[#27272a] text-[#f4f4f5] text-[12px] transition-colors">
+                  <LogIn size={14} />
+                  Sign in with Google
+                </button>
+              )
+            ) : (
+              <>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Creator" alt="Creator" className="w-7 h-7 rounded-full bg-[#27272a]" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-medium text-[#f4f4f5] truncate leading-tight">The Creator</div>
+                  <div className="text-[11px] text-[#71717a] truncate leading-tight">Sign in to personalize</div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

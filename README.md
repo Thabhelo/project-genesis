@@ -90,6 +90,13 @@ gcloud run services update project-genesis-backend --region us-central1 \
   --set-env-vars GEMINI_API_KEY=your_key
 ```
 
+### Google OAuth (optional)
+To enable "Sign in with Google" for the human user:
+1. Firebase Console → Authentication → Sign-in method → Enable **Google**
+2. Add your Cloud Run frontend URL to **Authorized domains** (e.g. `project-genesis-frontend-xxx.run.app`)
+3. Add `frontend/.env` with `VITE_FIREBASE_*` (from Project Settings → General)
+4. For Cloud Run: export `VITE_FIREBASE_*` before `./scripts/deploy-cloudrun.sh`
+
 ### Alternative: Vercel (frontend) + Railway/Render (backend)
 - **Frontend:** `cd frontend && vercel --prod` — set `VITE_API_URL` in Vercel env vars
 - **Backend:** Deploy `backend` folder to Railway or Render
