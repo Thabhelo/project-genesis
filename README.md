@@ -70,7 +70,10 @@ The backend loads and saves state **per user** (keyed by Firebase UID). Each sig
 
 ## Deployment
 
-### Google Cloud Run (recommended)
+### Automatic deploy (GitHub Actions)
+Pushes to `main` automatically deploy to Cloud Run. One-time setup: add `GCP_PROJECT_ID` and `GCP_SA_KEY` as GitHub repository secrets. See [docs/DEPLOY.md](docs/DEPLOY.md) for details.
+
+### Manual deploy (Google Cloud Run)
 Deploy both frontend and backend to Cloud Run via gcloud CLI:
 
 ```bash
