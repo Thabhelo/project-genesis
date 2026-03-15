@@ -46,7 +46,13 @@ fi
 echo ""
 echo "=== Building and deploying frontend ==="
 cd "$ROOT/frontend"
-# Optional: export VITE_FIREBASE_* from frontend/.env for Google OAuth in production
+# Load Firebase config from frontend/.env if it exists (for OAuth in production)
+if [ -f "$ROOT/frontend/.env" ]; then
+  set -a
+  source "$ROOT/frontend/.env"
+  set +a
+  echo "Loaded Firebase config from frontend/.env"
+fi
 gcloud builds submit --config=cloudbuild.yaml \
   --substitutions="_REGION=$REGION,_BACKEND_URL=$BACKEND_URL,_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY:-},_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN:-},_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID:-},_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET:-},_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID:-},_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID:-}" \
   --project="$PROJECT_ID"

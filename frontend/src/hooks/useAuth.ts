@@ -5,7 +5,7 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
 } from 'firebase/auth';
-import { initFirebase, googleProvider } from '../firebase';
+import { initFirebase, googleProvider, githubProvider } from '../firebase';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -37,6 +37,16 @@ export function useAuth() {
     }
   };
 
+  const signInWithGitHub = async () => {
+    const auth = initFirebase();
+    if (!auth) return;
+    try {
+      await signInWithPopup(auth, githubProvider);
+    } catch (err) {
+      console.error('Sign in failed:', err);
+    }
+  };
+
   const signOut = async () => {
     const auth = initFirebase();
     if (!auth) return;
@@ -47,5 +57,5 @@ export function useAuth() {
     }
   };
 
-  return { user, loading, authReady, signInWithGoogle, signOut };
+  return { user, loading, authReady, signInWithGoogle, signInWithGitHub, signOut };
 }
