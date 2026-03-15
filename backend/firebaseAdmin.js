@@ -13,7 +13,7 @@ try {
   db = admin.firestore();
   console.log("Firebase Admin initialized successfully.");
 } catch (error) {
-  console.warn("Firebase Admin initialization failed. Ensure serviceAccountKey.json exists. Running in mock mode.");
+  console.warn("Firebase Admin: No serviceAccountKey.json found. State will not persist across restarts. See README for Firestore setup.");
   // Mock DB for local testing without Firebase
   db = {
     collection: () => ({

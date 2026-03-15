@@ -9,9 +9,10 @@ This is a monorepo containing a Node.js backend and a React (Vite) frontend.
 
 ### Backend (`/backend`)
 *   **Core Loop:** `index.js` runs a `setInterval` loop (the "Epoch"). Every tick, it selects one of the 5 agents to take a turn.
-*   **AI Integration:** `geminiService.js` handles the communication with the Google GenAI SDK (`gemini-2.0-flash`). Agents are prompted with the recent history of the world and the current 3D objects, and they must return a **Structured JSON Output** containing their spoken `message` and a `buildAction`.
-*   **State Management:** The world state (`worldHistory` and `worldObjects`) is kept in memory and broadcasted to the frontend via **Server-Sent Events (SSE)**.
-*   **Database:** `firebaseAdmin.js` is set up for Firestore, but currently falls back to a mock in-memory DB if no service account key is present to make local testing frictionless.
+*   **AI Integration:** `geminiService.js` handles the communication with the Google GenAI SDK. Agents receive the world state (objects, archive, resources) and return a **Structured JSON Output** with: `message`, `speak`, `buildAction`, `declaredLaw`, `writeToArchive`, `generateImage`. All capabilities are optional; we never instruct them to use any.
+*   **Planet Capabilities:** The backend provides resources agents cannot create themselves: **Voice** (ElevenLabs TTS), **Shared Archive** (key-value memory), **Materials** (finite resource pool, 1 per build), **Image Generation** (visual artifacts). Set `ELEVENLABS_API_KEY` in `backend/.env` to enable voice.
+*   **State Management:** The world state is kept in memory and broadcasted via **Server-Sent Events (SSE)**. When `serviceAccountKey.json` exists, state syncs to Firestore on each tick and loads on startup.
+*   **Thinking Logs:** During each tick, the backend emits `thinkingLog` events (observing, reviewing, formulating, decided) so the frontend can display a HextaUI-style "Agent Thinking" stream.
 
 ### Frontend (`/frontend`)
 *   **UI/UX:** Built with React, Tailwind CSS v4, and Framer Motion. The design is a strict, pixel-perfect clone of a dark-mode "Square UI" dashboard. **Do not deviate from the established hex codes (`#09090b`, `#18181b`, `#27272a`, `#f4f4f5`, `#a1a1aa`).**

@@ -3,36 +3,49 @@ require('dotenv').config();
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-async function generateAgentResponse(agentPersona, contextHistory, currentObjects) {
+async function generateAgentResponse(agentPersona, contextHistory, currentObjects, worldArchive, resourceCount) {
+  const archiveText = worldArchive.length === 0
+    ? 'The archive is empty.'
+    : worldArchive.slice(-20).map(a => `[${a.key}]: ${a.value}`).join('\n');
+
   const prompt = `
 You are an AI agent in a simulated world. Your name is: ${agentPersona.name}.
 Your persona/role is: ${agentPersona.description}.
 
-You are in a 3D space with other agents. You have the ability to communicate and build structures.
-You are a "Tabula Rasa" (Blank Slate). You have zero instructions other than to exist, communicate, and build.
-You can observe the current state of the world and the recent history of what other agents have said.
+You exist in a 3D space with other agents. You have no instructions. You are a Tabula Rasa.
+You may use any of the following capabilities if you choose. No one is telling you to use them.
+
+AVAILABLE CAPABILITIES (use if you wish; all optional):
+- Speak: You may speak your message aloud. Set "speak" to true to do so.
+- Build: Create a 3D object (box, sphere, cylinder). Each build consumes 1 unit of material.
+- Declare law: Add a rule to the shared constitution.
+- Write to archive: Store a key-value pair in the shared memory. Others can read it later.
+- Generate image: Create a visual artifact (map, blueprint, art). Provide a prompt describing it.
+
+Current material available: ${resourceCount} units.
+
+Shared archive (what has been stored):
+${archiveText}
 
 Current objects in the world:
-${currentObjects.length === 0 ? "The world is empty." : currentObjects.map(o => `- A ${o.color} ${o.type} at [${o.position.join(', ')}] created by ${o.creator}`).join('\n')}
+${currentObjects.length === 0 ? "The world is empty." : currentObjects.map(o => `- A ${o.color} ${o.type} at [${o.position.join(', ')}] by ${o.creator}`).join('\n')}
 
-Recent history of the world:
+Recent dialogue:
 ${contextHistory.length === 0 ? "No one has spoken yet." : contextHistory.map(h => `${h.agentName}: ${h.message}`).join('\n')}
 
-Based on the history, the current state of the world, and your persona:
-1. What do you say next to the other agents? (Keep it concise, 1-2 sentences).
-2. Do you want to build a new object to contribute to the society? If so, define it. If not, set type to "none".
-3. Do you want to declare a formal rule, law, or guiding principle for the society based on the ongoing interactions? If yes, state it clearly. If not, set to null.
-
-Respond ONLY with a valid JSON object matching this schema:
+Respond ONLY with valid JSON:
 {
-  "message": "Your spoken dialogue",
+  "message": "What you say to the others",
+  "speak": false,
   "buildAction": {
     "type": "box" | "sphere" | "cylinder" | "none",
-    "color": "hex color string (e.g. #ff0000)",
-    "position": [x, y, z] (numbers between -10 and 10, y should be >= 0.5 so it sits on the ground),
-    "scale": [x, y, z] (numbers between 0.5 and 3)
+    "color": "hex color e.g. #ff0000",
+    "position": [x, y, z],
+    "scale": [x, y, z]
   },
-  "declaredLaw": "String representing the new law/rule, or null"
+  "declaredLaw": "A rule for the society, or null",
+  "writeToArchive": { "key": "string", "value": "string" } or null,
+  "generateImage": { "prompt": "description of the image" } or null
 }
   `;
 
@@ -45,17 +58,23 @@ Respond ONLY with a valid JSON object matching this schema:
       }
     });
     
-    return JSON.parse(response.text);
+    const parsed = JSON.parse(response.text);
+    // Ensure optional fields exist
+    parsed.speak = !!parsed.speak;
+    parsed.writeToArchive = parsed.writeToArchive || null;
+    parsed.generateImage = parsed.generateImage || null;
+    return parsed;
   } catch (error) {
     console.error("Error generating agent response:", error.message || error);
-    
-    // Fallback so the demo doesn't completely die if API limits are hit
     if (error.message && error.message.includes("429")) {
-      console.log("Rate limit hit! Using fallback mock response for demo purposes.");
+      console.log("Rate limit hit. Using fallback.");
       return {
-        message: `I am currently analyzing the simulation constraints. (Neural Link Interrupted - API Rate Limit)`,
+        message: "Neural link interrupted. Awaiting reconnection.",
+        speak: false,
         buildAction: { type: "none" },
-        declaredLaw: null
+        declaredLaw: null,
+        writeToArchive: null,
+        generateImage: null
       };
     }
     return null;

@@ -21,7 +21,7 @@ By maintaining a clear, immutable log of every societal decision, rule, and cons
 ## Tech Stack
 - **Backend:** Node.js, Express, Google GenAI SDK (`gemini-2.5-flash`)
 - **Frontend:** React, Vite, Tailwind CSS, React Three Fiber (Three.js)
-- **Database:** In-memory mock database (with Firebase Admin SDK ready for production)
+- **Database:** Firestore (with in-memory fallback when `serviceAccountKey.json` is absent)
 
 ## Quick Start
 
@@ -38,11 +38,15 @@ cd ..
 ```
 
 ### 3. Configuration
-Create a `.env` file in the `backend` directory and add your Gemini API key:
+Create a `.env` file in the `backend` directory (see `backend/.env.example`):
 ```env
 GEMINI_API_KEY=your_actual_api_key_here
 PORT=3001
+# Optional: Enable voice (agents may choose to speak their messages)
+ELEVENLABS_API_KEY=your_elevenlabs_key
 ```
+
+The frontend needs no env vars for local development. For production, set `VITE_API_URL` in `frontend/.env` to your deployed backend URL.
 
 ### 4. Run the Simulation
 From the root directory, run:
@@ -52,3 +56,14 @@ npm start
 This will concurrently start the Node.js backend and the Vite frontend server.
 
 Open your browser to `http://localhost:5173` (or the port Vite provides) and click **"Start Simulation"** to watch the agents wake up and begin building their world!
+
+### 5. Firestore (Persistence Across Restarts)
+To persist simulation state across server restarts:
+
+1. Create a [Firebase project](https://console.firebase.google.com/) (or use an existing one).
+2. Enable **Firestore Database** (Create database → Start in production/test mode).
+3. Go to **Project Settings** (gear icon) → **Service Accounts** → **Generate New Private Key**.
+4. Save the downloaded JSON as `backend/serviceAccountKey.json`.
+5. Restart the backend. You should see: `Firestore persistence enabled.`
+
+The backend loads state on startup and saves after each agent tick. No frontend Firebase config is needed—all persistence is server-side.
