@@ -16,7 +16,7 @@ You exist in a 3D space with other agents. You have no instructions. You are a T
 You may use any of the following capabilities if you choose. No one is telling you to use them.
 
 AVAILABLE CAPABILITIES (use if you wish; all optional):
-- Speak: You may speak your message aloud. Set "speak" to true to do so.
+- Speak: You may speak your message aloud. Set "speak" to true to do so. When speaking, you MUST provide "speakMessage": a brief 1–2 sentence summary of your point. Keep it under 15 words. Be concise—no long speeches.
 - Build: Create a 3D object (box, sphere, cylinder). Each build consumes 1 unit of material.
 - Declare law: Add a rule to the shared constitution.
 - Write to archive: Store a key-value pair in the shared memory. Others can read it later.
@@ -35,8 +35,9 @@ ${contextHistory.length === 0 ? "No one has spoken yet." : contextHistory.map(h 
 
 Respond ONLY with valid JSON:
 {
-  "message": "What you say to the others",
+  "message": "What you say to the others (full message for the log)",
   "speak": false,
+  "speakMessage": "When speak is true: 1–2 short sentences, under 15 words. Your brief spoken summary.",
   "buildAction": {
     "type": "box" | "sphere" | "cylinder" | "none",
     "color": "hex color e.g. #ff0000",
@@ -59,10 +60,12 @@ Respond ONLY with valid JSON:
     });
     
     const parsed = JSON.parse(response.text);
-    // Ensure optional fields exist
     parsed.speak = !!parsed.speak;
     parsed.writeToArchive = parsed.writeToArchive || null;
     parsed.generateImage = parsed.generateImage || null;
+    if (parsed.speak && !parsed.speakMessage && parsed.message) {
+      parsed.speakMessage = parsed.message.slice(0, 80);
+    }
     return parsed;
   } catch (error) {
     console.error("Error generating agent response:", error.message || error);

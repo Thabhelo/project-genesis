@@ -4,9 +4,20 @@
  * Set ELEVENLABS_API_KEY in .env to enable. Gracefully no-ops if not configured.
  */
 
-async function speakText(text, voiceId = '21m00Tcm4TlvDq8ikWAM') {
+const VOICE_BY_AGENT = {
+  Alpha: '21m00Tcm4TlvDq8ikWAM',
+  Beta: 'pNInz6obpgDQGcFmaJgB',
+  Gamma: 'ThT5KcBeYPX3keUQqHPh',
+  Delta: 'TxGEqnHWrfWFTfGW9XjX',
+  Epsilon: 'VR6AewLTigWG4xSOukaG',
+};
+
+async function speakText(text, agentNameOrVoiceId) {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) return null;
+
+  const voiceId = VOICE_BY_AGENT[agentNameOrVoiceId] || agentNameOrVoiceId || '21m00Tcm4TlvDq8ikWAM';
+  const shortText = text.slice(0, 150).trim();
 
   try {
     const res = await fetch(
@@ -19,7 +30,7 @@ async function speakText(text, voiceId = '21m00Tcm4TlvDq8ikWAM') {
           'xi-api-key': apiKey,
         },
         body: JSON.stringify({
-          text: text.slice(0, 500), // Limit length
+          text: shortText,
           model_id: 'eleven_flash_v2_5',
         }),
       }

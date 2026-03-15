@@ -15,6 +15,7 @@ Pushes to `main` trigger a deploy to Google Cloud Run.
 2. **Create and download a JSON key** for that service account.
 
 3. **Add GitHub repository secrets** (Settings → Secrets and variables → Actions):
+   Use these exact names (letters, numbers, underscores only—no spaces or hyphens):
    - `GCP_PROJECT_ID` – your GCP project ID (e.g. `project-genesis-9fb21`)
    - `GCP_SA_KEY` – full contents of the service account JSON key file
 

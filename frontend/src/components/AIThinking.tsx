@@ -66,8 +66,7 @@ export default function AIThinking({
 
   return (
     <div
-      className={`bg-[#09090b] border border-[#27272a] rounded-xl overflow-hidden flex flex-col ${className}`}
-      style={{ minHeight: "320px" }}
+      className={`bg-[#09090b] border border-[#27272a] rounded-xl overflow-hidden flex flex-col h-full min-h-[120px] ${className}`}
     >
       <div className="p-4 border-b border-[#27272a] flex items-center gap-3 shrink-0">
         {spinner && (

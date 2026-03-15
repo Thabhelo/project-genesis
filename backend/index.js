@@ -39,6 +39,7 @@ function createEmptyState() {
     currentStatus: "Idle",
     isRunning: false,
     tickInterval: null,
+    tickInProgress: false,
     clients: []
   };
 }
@@ -231,7 +232,9 @@ app.get('/api/export/timelapse', verifyAuth, async (req, res) => {
 async function runSimulationTick(userId) {
   const state = userStates.get(userId);
   if (!state || !state.isRunning) return;
+  if (state.tickInProgress) return;
 
+  state.tickInProgress = true;
   const agent = agents[state.currentAgentIndex];
   const tickStart = Date.now();
 
@@ -319,8 +322,9 @@ async function runSimulationTick(userId) {
       }
 
       let audioBase64 = null;
-      if (response.speak && response.message) {
-        audioBase64 = await speakText(response.message);
+      const textToSpeak = response.speak && (response.speakMessage || response.message);
+      if (textToSpeak) {
+        audioBase64 = await speakText(textToSpeak, agent.name);
       }
 
       let newImage = null;
@@ -367,6 +371,7 @@ async function runSimulationTick(userId) {
   }
 
   state.currentAgentIndex = (state.currentAgentIndex + 1) % agents.length;
+  state.tickInProgress = false;
 }
 
 const PORT = process.env.PORT || 3001;
