@@ -66,7 +66,7 @@ To persist simulation state across server restarts:
 4. Save the downloaded JSON as `backend/serviceAccountKey.json`.
 5. Restart the backend. You should see: `Firestore persistence enabled.`
 
-The backend loads state on startup and saves after each agent tick. No frontend Firebase config is needed—all persistence is server-side.
+The backend loads and saves state **per user** (keyed by Firebase UID). Each signed-in user has their own simulation world that persists across sessions.
 
 ## Deployment
 

@@ -91,5 +91,9 @@ firebase-debug.*.log
 dist/
 build/
 
+# Backend checkpoints (per-user local saves)
+backend/checkpoints/
+backend/checkpoint.json
+
 # Vercel
 .vercel/

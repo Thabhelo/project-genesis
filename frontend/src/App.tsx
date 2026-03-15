@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { World3D } from './components/World3D';
+import AIThinking from './components/AIThinking';
+import { ThinkingBar } from './components/prompt-kit/thinking-bar';
 import { 
   Play, Square, RotateCcw, Save, Download, 
   LayoutGrid, Star, Clock, Users, Trash, Folder,
-  Search, Activity, LogOut,
-  Box, Eye, Zap, Database, Github, Globe, Map, BookOpen, DownloadCloud
+  Search, LogOut,
+  Box, Database, Github, Globe, Map, BookOpen, DownloadCloud
 } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,18 +14,20 @@ import './App.css';
 
 const REPO_URL = 'https://github.com/Thabhelo/project-genesis';
 
+const GREEK_LETTERS: Record<string, string> = { Alpha: "α", Beta: "β", Gamma: "γ", Delta: "δ", Epsilon: "ε" };
+
 const AGENTS = [
-  { name: "Alpha", role: "The Architect", icon: Box, color: "text-[#818cf8]", bg: "bg-[#818cf8]/10", border: "border-[#818cf8]/20", gradient: "from-[#818cf8] to-[#6366f1]" },
-  { name: "Beta", role: "The Diplomat", icon: Users, color: "text-[#c084fc]", bg: "bg-[#c084fc]/10", border: "border-[#c084fc]/20", gradient: "from-[#c084fc] to-[#a855f7]" },
-  { name: "Gamma", role: "The Critique", icon: Zap, color: "text-[#f472b6]", bg: "bg-[#f472b6]/10", border: "border-[#f472b6]/20", gradient: "from-[#f472b6] to-[#d946ef]" },
-  { name: "Delta", role: "The Merchant", icon: Database, color: "text-[#fbbf24]", bg: "bg-[#fbbf24]/10", border: "border-[#fbbf24]/20", gradient: "from-[#fbbf24] to-[#f59e0b]" },
-  { name: "Epsilon", role: "The Philosopher", icon: Eye, color: "text-[#34d399]", bg: "bg-[#34d399]/10", border: "border-[#34d399]/20", gradient: "from-[#34d399] to-[#10b981]" }
+  { name: "Alpha", role: "The Architect", color: "text-[#818cf8]", bg: "bg-[#818cf8]/10", border: "border-[#818cf8]/20", gradient: "from-[#818cf8] to-[#6366f1]" },
+  { name: "Beta", role: "The Diplomat", color: "text-[#c084fc]", bg: "bg-[#c084fc]/10", border: "border-[#c084fc]/20", gradient: "from-[#c084fc] to-[#a855f7]" },
+  { name: "Gamma", role: "The Critique", color: "text-[#f472b6]", bg: "bg-[#f472b6]/10", border: "border-[#f472b6]/20", gradient: "from-[#f472b6] to-[#d946ef]" },
+  { name: "Delta", role: "The Merchant", color: "text-[#fbbf24]", bg: "bg-[#fbbf24]/10", border: "border-[#fbbf24]/20", gradient: "from-[#fbbf24] to-[#f59e0b]" },
+  { name: "Epsilon", role: "The Philosopher", color: "text-[#34d399]", bg: "bg-[#34d399]/10", border: "border-[#34d399]/20", gradient: "from-[#34d399] to-[#10b981]" }
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 function App() {
-  const { user, loading: authLoading, authReady, signInWithGoogle, signInWithGitHub, signOut } = useAuth();
+  const { user, loading: authLoading, authReady, signInWithGoogle, signInWithGitHub, signOut, getIdToken } = useAuth();
   const [signInPrompt, setSignInPrompt] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [objects, setObjects] = useState<any[]>([]);
@@ -53,61 +57,75 @@ function App() {
   }, [user]);
 
   useEffect(() => {
-    const eventSource = new EventSource(`${API_BASE}/api/stream`);
+    if (!authReady || !user) return;
 
-    eventSource.addEventListener('init', (e) => {
-      const data = JSON.parse(e.data);
-      setHistory(data.history || []);
-      setObjects(data.objects || []);
-      setConstitution(data.constitution || []);
-      setArchive(data.archive || []);
-      setResources(data.resources ?? 1000);
-      setImages(data.images || []);
-      setIsRunning(data.isRunning);
-      setThinkingLogs([]);
+    let eventSource: EventSource | null = null;
+    getIdToken().then((token) => {
+      if (!token) return;
+      const url = `${API_BASE}/api/stream?token=${encodeURIComponent(token)}`;
+      eventSource = new EventSource(url);
+
+      eventSource.addEventListener('init', (e) => {
+        const data = JSON.parse((e as MessageEvent).data);
+        setHistory(data.history || []);
+        setObjects(data.objects || []);
+        setConstitution(data.constitution || []);
+        setArchive(data.archive || []);
+        setResources(data.resources ?? 1000);
+        setImages(data.images || []);
+        setIsRunning(data.isRunning);
+        setThinkingLogs([]);
+      });
+
+      eventSource.addEventListener('stateChange', (e) => {
+        const data = JSON.parse((e as MessageEvent).data);
+        setIsRunning(data.isRunning);
+        if (!data.isRunning) setThinkingLogs([]);
+      });
+
+      eventSource.addEventListener('agentStatus', (e) => {
+        const data = JSON.parse((e as MessageEvent).data);
+        setAgentStates(prev => ({
+          ...prev,
+          [data.agentName]: { activity: data.activity, details: data.details }
+        }));
+      });
+
+      eventSource.addEventListener('thinkingLog', (e) => {
+        const data = JSON.parse((e as MessageEvent).data);
+        setThinkingLogs(prev => [...prev, { id: data.id, agentName: data.agentName, message: data.message, elapsedMs: data.elapsedMs }]);
+      });
+
+      eventSource.addEventListener('tick', (e) => {
+        const data = JSON.parse((e as MessageEvent).data);
+        if (data.historyEntry) setHistory(prev => [...prev, data.historyEntry]);
+        if (data.newObject) setObjects(prev => [...prev, data.newObject]);
+        if (data.newLaw) setConstitution(prev => [...prev, data.newLaw]);
+        if (data.archiveEntry) setArchive(prev => [...prev, data.archiveEntry]);
+        if (data.newImage) setImages(prev => [...prev, data.newImage]);
+        if (typeof data.resources === 'number') setResources(data.resources);
+        if (data.audioBase64) {
+          try {
+            const audio = new Audio(`data:audio/mpeg;base64,${data.audioBase64}`);
+            audio.play().catch(() => {});
+          } catch (_) {}
+        }
+      });
     });
 
-    eventSource.addEventListener('stateChange', (e) => {
-      const data = JSON.parse(e.data);
-      setIsRunning(data.isRunning);
-      if (!data.isRunning) setThinkingLogs([]);
-    });
-
-    eventSource.addEventListener('agentStatus', (e) => {
-      const data = JSON.parse(e.data);
-      setAgentStates(prev => ({
-        ...prev,
-        [data.agentName]: { activity: data.activity, details: data.details }
-      }));
-    });
-
-    eventSource.addEventListener('thinkingLog', (e) => {
-      const data = JSON.parse(e.data);
-      setThinkingLogs(prev => [...prev, { id: data.id, agentName: data.agentName, message: data.message, elapsedMs: data.elapsedMs }]);
-    });
-
-    eventSource.addEventListener('tick', (e) => {
-      const data = JSON.parse(e.data);
-      if (data.historyEntry) setHistory(prev => [...prev, data.historyEntry]);
-      if (data.newObject) setObjects(prev => [...prev, data.newObject]);
-      if (data.newLaw) setConstitution(prev => [...prev, data.newLaw]);
-      if (data.archiveEntry) setArchive(prev => [...prev, data.archiveEntry]);
-      if (data.newImage) setImages(prev => [...prev, data.newImage]);
-      if (typeof data.resources === 'number') setResources(data.resources);
-      if (data.audioBase64) {
-        try {
-          const audio = new Audio(`data:audio/mpeg;base64,${data.audioBase64}`);
-          audio.play().catch(() => {});
-        } catch (_) {}
-      }
-    });
-
-    return () => eventSource.close();
-  }, []);
+    return () => {
+      eventSource?.close();
+    };
+  }, [authReady, user, getIdToken]);
 
   const apiCall = async (endpoint: string) => {
     try {
-      await fetch(`${API_BASE}/api/simulation/${endpoint}`, { method: 'POST' });
+      const token = await getIdToken();
+      if (!token) return;
+      await fetch(`${API_BASE}/api/simulation/${endpoint}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
     } catch (e) {
       console.error(`Failed to call ${endpoint}`, e);
     }
@@ -115,7 +133,11 @@ function App() {
 
   const exportTimelapse = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/export/timelapse`);
+      const token = await getIdToken();
+      if (!token) return;
+      const res = await fetch(`${API_BASE}/api/export/timelapse`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -312,25 +334,22 @@ function App() {
 
         <div className="flex-1 overflow-y-auto px-6 pb-6 flex gap-6">
           
-          <div className="flex-1 flex flex-col gap-6 min-w-0">
-            <div className="grid grid-cols-5 gap-4">
+          <div className="flex-1 flex gap-6 min-w-0">
+            {/* Left: Agent cards - vertical stack */}
+            <div className="w-[220px] flex flex-col gap-3 shrink-0">
               {AGENTS.map(agent => {
                 const state = agentStates[agent.name] || { activity: 'Idle', details: 'Awaiting turn' };
                 const isThinking = state.activity === 'observing' || state.activity === 'thinking';
-                
                 return (
-                  <div key={agent.name} className="bg-[#09090b] border border-[#27272a] rounded-xl p-4 flex flex-col relative group hover:bg-[#18181b] transition-colors">
-                    <div className="flex items-start justify-between mb-6">
-                      <div className={`w-10 h-10 rounded-xl bg-[#18181b] border border-[#27272a] flex items-center justify-center ${agent.color}`}>
-                        {isThinking ? <Activity size={18} className="animate-pulse" /> : <agent.icon size={18} />}
+                  <div key={agent.name} className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex flex-col min-h-[140px] relative group hover:bg-[#18181b] transition-colors">
+                    <div className="flex flex-col items-center text-center gap-3">
+                      <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${agent.gradient}`}>
+                        <span className="text-white text-2xl font-medium">{GREEK_LETTERS[agent.name] ?? agent.name[0]}</span>
                       </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-medium text-[#f4f4f5] text-[14px] mb-1">{agent.name}</h3>
-                      <div className="flex justify-between items-center text-[12px] text-[#71717a]">
-                        <span className="truncate pr-2">{state.activity === 'Idle' ? agent.role : state.activity}</span>
-                        <span>{isThinking ? '...' : ''}</span>
+                      <div>
+                        <h3 className="font-semibold text-[#f4f4f5] text-[16px]">{agent.name}</h3>
+                        <p className="text-[14px] text-[#a1a1aa] mt-1">{state.activity === 'Idle' ? agent.role : state.activity}</p>
+                        {isThinking && <span className="text-[#818cf8] text-[11px]">...</span>}
                       </div>
                     </div>
                   </div>
@@ -338,71 +357,44 @@ function App() {
               })}
             </div>
 
-            <div className="flex-1 bg-[#09090b] border border-[#27272a] rounded-xl overflow-hidden relative flex flex-col min-h-[400px]">
-              <div className="p-4 border-b border-[#27272a] flex justify-between items-center bg-[#09090b] z-10">
-                <h2 className="font-medium text-[#f4f4f5] text-[14px]">Live World Render</h2>
-                <div className="flex items-center gap-4 text-[12px] text-[#71717a]">
-                  <span>Constructs: {objects.length}</span>
-                  <span>Materials: {resources}</span>
+            {/* Center: Agent thinking process - main focus */}
+            <div className="flex-1 flex flex-col gap-6 min-w-0">
+              {thinkingLogs.length === 0 ? (
+                <div className="flex-1 min-h-[360px] flex items-center justify-center rounded-xl border border-[#27272a] bg-[#09090b]">
+                  <ThinkingBar
+                    text={isRunning ? 'Waiting for next agent...' : 'Simulation paused. Start to see agent thinking.'}
+                  />
                 </div>
-              </div>
-              <div className="flex-1 relative">
-                <World3D objects={objects} />
+              ) : (
+                <div className="flex-1 min-h-[360px] flex flex-col">
+                  <AIThinking
+                    key={isRunning ? 'running' : 'paused'}
+                    spinner={isRunning}
+                    message={thinkingLogs.map((log) => `[${log.agentName}] ${log.message}`).join('\n\n')}
+                    agentName={thinkingLogs[thinkingLogs.length - 1]?.agentName}
+                  />
+                  <div ref={thinkingEndRef} />
+                </div>
+              )}
+
+              {/* 3D World below thinking */}
+              <div className="flex-1 bg-[#09090b] border border-[#27272a] rounded-xl overflow-hidden relative flex flex-col min-h-[320px]">
+                <div className="p-4 border-b border-[#27272a] flex justify-between items-center bg-[#09090b] z-10">
+                  <h2 className="font-medium text-[#f4f4f5] text-[14px]">Live World Render</h2>
+                  <div className="flex items-center gap-4 text-[12px] text-[#71717a]">
+                    <span>Constructs: {objects.length}</span>
+                    <span>Materials: {resources}</span>
+                  </div>
+                </div>
+                <div className="flex-1 relative">
+                  <World3D objects={objects} />
+                </div>
               </div>
             </div>
           </div>
 
           {/* RIGHT SIDEBAR */}
           <div className="w-[300px] flex flex-col gap-6 shrink-0">
-            
-            {/* Agent Thinking Logs - HextaUI-style */}
-            <div className="bg-[#09090b] border border-[#27272a] rounded-xl p-5 flex-1 flex flex-col min-h-0">
-              <div className="flex justify-between items-center mb-4 shrink-0">
-                <h3 className="font-medium text-[#f4f4f5] text-[14px]">Agent Thinking</h3>
-                {isRunning && thinkingLogs.length > 0 && (
-                  <span className="text-[11px] text-[#71717a]">
-                    {thinkingLogs[thinkingLogs.length - 1]?.elapsedMs 
-                      ? `${(thinkingLogs[thinkingLogs.length - 1].elapsedMs / 1000).toFixed(1)}s` 
-                      : ''}
-                  </span>
-                )}
-              </div>
-              
-              <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar min-h-[180px]">
-                {!isRunning && thinkingLogs.length === 0 ? (
-                  <div className="text-[12px] text-[#71717a] italic">Simulation paused. Start to see agent thinking.</div>
-                ) : thinkingLogs.length === 0 ? (
-                  <div className="flex items-center gap-2 text-[#71717a]">
-                    <div className="w-2 h-2 rounded-full bg-[#818cf8] animate-pulse" />
-                    <span className="text-[12px]">Waiting for next agent...</span>
-                  </div>
-                ) : (
-                  <AnimatePresence initial={false}>
-                    {thinkingLogs.map((log) => {
-                      const agent = AGENTS.find(a => a.name === log.agentName) || AGENTS[0];
-                      return (
-                        <motion.div
-                          key={log.id ?? `${log.agentName}-${log.message}-${log.elapsedMs}`}
-                          initial={{ opacity: 0, y: 4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex gap-2 items-start"
-                        >
-                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-gradient-to-br ${agent.gradient}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[12px] text-[#a1a1aa] leading-relaxed">{log.message}</p>
-                            {log.elapsedMs > 0 && (
-                              <span className="text-[10px] text-[#71717a]">{((log.elapsedMs || 0) / 1000).toFixed(1)}s</span>
-                            )}
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                )}
-                <div ref={thinkingEndRef} />
-              </div>
-            </div>
-
             <TabContent
               activeTab={activeTab}
               filteredHistory={filteredHistory}
@@ -425,7 +417,7 @@ function App() {
   );
 }
 
-type AgentDef = { name: string; role: string; icon: any; color: string; bg: string; border: string; gradient: string };
+type AgentDef = { name: string; role: string; color: string; bg: string; border: string; gradient: string };
 
 function TabContent({
   activeTab,

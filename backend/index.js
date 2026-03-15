@@ -7,18 +7,14 @@ const { generateAgentResponse } = require('./geminiService');
 const { speakText } = require('./elevenlabsService');
 const { generateImage } = require('./imageService');
 const { saveState, loadState, appendEvent, isFirestore } = require('./firestoreService');
+const { verifyAuth } = require('./authMiddleware');
 
 const app = express();
-// Allow all origins (frontend on Cloud Run has dynamic URL)
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 const TICK_RATE_MS = 6000;
 const INITIAL_RESOURCES = 1000;
-
-let isRunning = false;
-let tickInterval = null;
-let currentAgentIndex = 0;
 
 const agents = [
   { name: "Alpha", description: "The Architect. You are obsessed with structure, order, and building physical objects." },
@@ -28,138 +24,180 @@ const agents = [
   { name: "Epsilon", description: "The Philosopher. You ponder the meaning of the simulation and the nature of the creators." }
 ];
 
-let worldHistory = [];
-let worldObjects = [];
-let worldConstitution = [];
-let worldArchive = [];
-let worldResources = INITIAL_RESOURCES;
-let worldImages = [];
-let currentStatus = "Idle";
+/** Per-user state: userId -> { worldHistory, worldObjects, ... } */
+const userStates = new Map();
 
-let clients = [];
+function createEmptyState() {
+  return {
+    worldHistory: [],
+    worldObjects: [],
+    worldConstitution: [],
+    worldArchive: [],
+    worldResources: INITIAL_RESOURCES,
+    worldImages: [],
+    currentAgentIndex: 0,
+    currentStatus: "Idle",
+    isRunning: false,
+    tickInterval: null,
+    clients: []
+  };
+}
 
-function broadcast(event, data) {
-  clients.forEach(client => {
+async function getOrCreateUserState(userId) {
+  let state = userStates.get(userId);
+  if (!state) {
+    state = createEmptyState();
+    const loaded = await loadState(userId);
+    if (loaded && 'worldHistory' in loaded) {
+      state.worldHistory = loaded.worldHistory || [];
+      state.worldObjects = loaded.worldObjects || [];
+      state.worldConstitution = loaded.worldConstitution || [];
+      state.worldArchive = loaded.worldArchive || [];
+      state.worldResources = loaded.worldResources ?? INITIAL_RESOURCES;
+      state.worldImages = loaded.worldImages || [];
+      state.currentAgentIndex = loaded.currentAgentIndex ?? 0;
+    }
+    userStates.set(userId, state);
+  }
+  return state;
+}
+
+function broadcastToUser(state, event, data) {
+  state.clients.forEach(client => {
     try {
       client.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     } catch (e) {}
   });
 }
 
-function updateStatus(status) {
-  currentStatus = status;
-  broadcast('status', { status });
-}
+// SSE stream - requires token in query: /api/stream?token=...
+app.get('/api/stream', verifyAuth, async (req, res) => {
+  const { userId } = req;
+  const state = await getOrCreateUserState(userId);
 
-function updateAgentStatus(agentName, activity, details) {
-  broadcast('agentStatus', { agentName, activity, details });
-}
-
-function emitThinkingLog(agentName, message, elapsedMs) {
-  broadcast('thinkingLog', { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, agentName, message, elapsedMs, timestamp: Date.now() });
-}
-
-app.get('/api/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  res.write(`event: init\ndata: ${JSON.stringify({ 
-    history: worldHistory, 
-    objects: worldObjects, 
-    constitution: worldConstitution,
-    archive: worldArchive,
-    resources: worldResources,
-    images: worldImages,
-    isRunning, 
-    status: currentStatus 
+  res.write(`event: init\ndata: ${JSON.stringify({
+    history: state.worldHistory,
+    objects: state.worldObjects,
+    constitution: state.worldConstitution,
+    archive: state.worldArchive,
+    resources: state.worldResources,
+    images: state.worldImages,
+    isRunning: state.isRunning,
+    status: state.currentStatus
   })}\n\n`);
 
-  clients.push(res);
+  state.clients.push(res);
   req.on('close', () => {
-    clients = clients.filter(c => c !== res);
+    state.clients = state.clients.filter(c => c !== res);
   });
 });
 
-app.post('/api/simulation/start', (req, res) => {
-  if (isRunning) return res.status(400).json({ message: "Already running" });
-  isRunning = true;
-  updateStatus("Simulation started");
-  broadcast('stateChange', { isRunning });
-  runSimulationTick();
-  tickInterval = setInterval(runSimulationTick, TICK_RATE_MS);
+app.post('/api/simulation/start', verifyAuth, async (req, res) => {
+  const { userId } = req;
+  const state = await getOrCreateUserState(userId);
+  if (state.isRunning) return res.status(400).json({ message: "Already running" });
+  state.isRunning = true;
+  state.currentStatus = "Simulation started";
+  broadcastToUser(state, 'status', { status: state.currentStatus });
+  broadcastToUser(state, 'stateChange', { isRunning: true });
+  runSimulationTick(userId);
+  state.tickInterval = setInterval(() => runSimulationTick(userId), TICK_RATE_MS);
   res.json({ message: "Started" });
 });
 
-app.post('/api/simulation/stop', (req, res) => {
-  if (!isRunning) return res.status(400).json({ message: "Not running" });
-  isRunning = false;
-  clearInterval(tickInterval);
-  updateStatus("Simulation stopped");
-  broadcast('stateChange', { isRunning });
+app.post('/api/simulation/stop', verifyAuth, async (req, res) => {
+  const { userId } = req;
+  const state = await getOrCreateUserState(userId);
+  if (!state.isRunning) return res.status(400).json({ message: "Not running" });
+  state.isRunning = false;
+  clearInterval(state.tickInterval);
+  state.tickInterval = null;
+  state.currentStatus = "Simulation stopped";
+  broadcastToUser(state, 'status', { status: state.currentStatus });
+  broadcastToUser(state, 'stateChange', { isRunning: false });
   res.json({ message: "Stopped" });
 });
 
-app.post('/api/simulation/reset', async (req, res) => {
-  worldHistory = [];
-  worldObjects = [];
-  worldConstitution = [];
-  worldArchive = [];
-  worldResources = INITIAL_RESOURCES;
-  worldImages = [];
-  currentAgentIndex = 0;
+app.post('/api/simulation/reset', verifyAuth, async (req, res) => {
+  const { userId } = req;
+  const state = await getOrCreateUserState(userId);
+  state.worldHistory = [];
+  state.worldObjects = [];
+  state.worldConstitution = [];
+  state.worldArchive = [];
+  state.worldResources = INITIAL_RESOURCES;
+  state.worldImages = [];
+  state.currentAgentIndex = 0;
   await saveState({
-    worldHistory, worldObjects, worldConstitution,
-    worldArchive, worldResources, worldImages,
-    currentAgentIndex
-  }).catch(() => {});
-  updateStatus("World reset to Tabula Rasa");
-  broadcast('init', { 
-    history: worldHistory, 
-    objects: worldObjects, 
-    constitution: worldConstitution, 
-    archive: worldArchive, 
-    resources: worldResources, 
-    images: worldImages,
-    isRunning, 
-    status: currentStatus 
+    worldHistory: state.worldHistory,
+    worldObjects: state.worldObjects,
+    worldConstitution: state.worldConstitution,
+    worldArchive: state.worldArchive,
+    worldResources: state.worldResources,
+    worldImages: state.worldImages,
+    currentAgentIndex: state.currentAgentIndex
+  }, userId).catch(() => {});
+  state.currentStatus = "World reset to Tabula Rasa";
+  broadcastToUser(state, 'init', {
+    history: state.worldHistory,
+    objects: state.worldObjects,
+    constitution: state.worldConstitution,
+    archive: state.worldArchive,
+    resources: state.worldResources,
+    images: state.worldImages,
+    isRunning: state.isRunning,
+    status: state.currentStatus
   });
   res.json({ message: "Reset successful" });
 });
 
-const CHECKPOINT_FILE = path.join(__dirname, 'checkpoint.json');
+const CHECKPOINT_DIR = path.join(__dirname, 'checkpoints');
 
-app.post('/api/simulation/save', (req, res) => {
-  const state = { 
-    worldHistory, worldObjects, worldConstitution, 
-    worldArchive, worldResources, worldImages, 
-    currentAgentIndex 
-  };
-  fs.writeFileSync(CHECKPOINT_FILE, JSON.stringify(state, null, 2));
-  updateStatus("Checkpoint saved");
+app.post('/api/simulation/save', verifyAuth, async (req, res) => {
+  const { userId } = req;
+  const state = await getOrCreateUserState(userId);
+  if (!fs.existsSync(CHECKPOINT_DIR)) fs.mkdirSync(CHECKPOINT_DIR, { recursive: true });
+  const file = path.join(CHECKPOINT_DIR, `${userId.replace(/\//g, '_')}.json`);
+  fs.writeFileSync(file, JSON.stringify({
+    worldHistory: state.worldHistory,
+    worldObjects: state.worldObjects,
+    worldConstitution: state.worldConstitution,
+    worldArchive: state.worldArchive,
+    worldResources: state.worldResources,
+    worldImages: state.worldImages,
+    currentAgentIndex: state.currentAgentIndex
+  }, null, 2));
+  state.currentStatus = "Checkpoint saved";
   res.json({ message: "Saved" });
 });
 
-app.post('/api/simulation/load', (req, res) => {
-  if (fs.existsSync(CHECKPOINT_FILE)) {
-    const state = JSON.parse(fs.readFileSync(CHECKPOINT_FILE));
-    worldHistory = state.worldHistory || [];
-    worldObjects = state.worldObjects || [];
-    worldConstitution = state.worldConstitution || [];
-    worldArchive = state.worldArchive || [];
-    worldResources = state.worldResources ?? INITIAL_RESOURCES;
-    worldImages = state.worldImages || [];
-    currentAgentIndex = state.currentAgentIndex || 0;
-    updateStatus("Checkpoint loaded");
-    broadcast('init', { 
-      history: worldHistory, 
-      objects: worldObjects, 
-      constitution: worldConstitution, 
-      archive: worldArchive, 
-      resources: worldResources, 
-      images: worldImages,
-      isRunning, 
-      status: currentStatus 
+app.post('/api/simulation/load', verifyAuth, async (req, res) => {
+  const { userId } = req;
+  const state = await getOrCreateUserState(userId);
+  const file = path.join(CHECKPOINT_DIR, `${userId.replace(/\//g, '_')}.json`);
+  if (fs.existsSync(file)) {
+    const data = JSON.parse(fs.readFileSync(file));
+    state.worldHistory = data.worldHistory || [];
+    state.worldObjects = data.worldObjects || [];
+    state.worldConstitution = data.worldConstitution || [];
+    state.worldArchive = data.worldArchive || [];
+    state.worldResources = data.worldResources ?? INITIAL_RESOURCES;
+    state.worldImages = data.worldImages || [];
+    state.currentAgentIndex = data.currentAgentIndex || 0;
+    state.currentStatus = "Checkpoint loaded";
+    broadcastToUser(state, 'init', {
+      history: state.worldHistory,
+      objects: state.worldObjects,
+      constitution: state.worldConstitution,
+      archive: state.worldArchive,
+      resources: state.worldResources,
+      images: state.worldImages,
+      isRunning: state.isRunning,
+      status: state.currentStatus
     });
     res.json({ message: "Loaded" });
   } else {
@@ -167,15 +205,17 @@ app.post('/api/simulation/load', (req, res) => {
   }
 });
 
-app.get('/api/export/timelapse', (req, res) => {
+app.get('/api/export/timelapse', verifyAuth, async (req, res) => {
+  const { userId } = req;
+  const state = await getOrCreateUserState(userId);
   const payload = {
     exportedAt: Date.now(),
-    history: worldHistory,
-    objects: worldObjects,
-    constitution: worldConstitution,
-    archive: worldArchive,
-    resources: worldResources,
-    eventLog: worldHistory.map((h, i) => ({
+    history: state.worldHistory,
+    objects: state.worldObjects,
+    constitution: state.worldConstitution,
+    archive: state.worldArchive,
+    resources: state.worldResources,
+    eventLog: state.worldHistory.map((h, i) => ({
       type: 'message',
       index: i,
       agentName: h.agentName,
@@ -188,13 +228,19 @@ app.get('/api/export/timelapse', (req, res) => {
   res.send(JSON.stringify(payload, null, 2));
 });
 
-async function runSimulationTick() {
-  if (!isRunning) return;
-  
-  const agent = agents[currentAgentIndex];
+async function runSimulationTick(userId) {
+  const state = userStates.get(userId);
+  if (!state || !state.isRunning) return;
+
+  const agent = agents[state.currentAgentIndex];
   const tickStart = Date.now();
+
+  const broadcast = (ev, data) => broadcastToUser(state, ev, data);
+  const updateStatus = (s) => { state.currentStatus = s; broadcast('status', { status: s }); };
+  const updateAgentStatus = (name, activity, details) => broadcast('agentStatus', { agentName: name, activity, details });
+  const emitThinkingLog = (name, msg, ms) => broadcast('thinkingLog', { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, agentName: name, message: msg, elapsedMs: ms, timestamp: Date.now() });
+
   updateStatus(`Epoch in progress...`);
-  
   agents.forEach(a => {
     if (a.name !== agent.name) updateAgentStatus(a.name, 'idle', 'Awaiting turn');
   });
@@ -202,25 +248,25 @@ async function runSimulationTick() {
   updateAgentStatus(agent.name, 'observing', 'Analyzing the world state...');
   emitThinkingLog(agent.name, `${agent.name} is observing the world state...`, 0);
   await new Promise(resolve => setTimeout(resolve, 400));
-  emitThinkingLog(agent.name, `${agent.name} has noted ${worldObjects.length} constructs and ${worldResources} materials.`, Date.now() - tickStart);
+  emitThinkingLog(agent.name, `${agent.name} has noted ${state.worldObjects.length} constructs and ${state.worldResources} materials.`, Date.now() - tickStart);
   await new Promise(resolve => setTimeout(resolve, 400));
-  emitThinkingLog(agent.name, `${agent.name} is reviewing the constitution (${worldConstitution.length} articles) and recent dialogue.`, Date.now() - tickStart);
+  emitThinkingLog(agent.name, `${agent.name} is reviewing the constitution (${state.worldConstitution.length} articles) and recent dialogue.`, Date.now() - tickStart);
   await new Promise(resolve => setTimeout(resolve, 400));
   updateAgentStatus(agent.name, 'thinking', 'Formulating a thought process...');
   emitThinkingLog(agent.name, `${agent.name} is formulating a response...`, Date.now() - tickStart);
   await new Promise(resolve => setTimeout(resolve, 300));
 
-  const recentHistory = worldHistory.slice(-10);
+  const recentHistory = state.worldHistory.slice(-10);
 
   try {
     const response = await generateAgentResponse(
-      agent, 
-      recentHistory, 
-      worldObjects, 
-      worldArchive, 
-      worldResources
+      agent,
+      recentHistory,
+      state.worldObjects,
+      state.worldArchive,
+      state.worldResources
     );
-    
+
     if (response) {
       emitThinkingLog(agent.name, `${agent.name} has decided: "${response.message}"`, Date.now() - tickStart);
       if (response.buildAction?.type !== 'none') {
@@ -230,23 +276,23 @@ async function runSimulationTick() {
         emitThinkingLog(agent.name, `${agent.name} declares a new law: "${response.declaredLaw}"`, Date.now() - tickStart);
       }
       updateAgentStatus(agent.name, 'acted', 'Action completed.');
-      
+
       const historyEntry = {
         agentName: agent.name,
         message: response.message,
         timestamp: Date.now()
       };
-      worldHistory.push(historyEntry);
-      
+      state.worldHistory.push(historyEntry);
+
       let newObject = null;
-      if (response.buildAction && response.buildAction.type !== "none" && worldResources > 0) {
-        worldResources -= 1;
+      if (response.buildAction && response.buildAction.type !== "none" && state.worldResources > 0) {
+        state.worldResources -= 1;
         newObject = {
           id: Date.now().toString(),
           creator: agent.name,
           ...response.buildAction
         };
-        worldObjects.push(newObject);
+        state.worldObjects.push(newObject);
       }
 
       let newLaw = null;
@@ -257,7 +303,7 @@ async function runSimulationTick() {
           law: response.declaredLaw,
           timestamp: Date.now()
         };
-        worldConstitution.push(newLaw);
+        state.worldConstitution.push(newLaw);
       }
 
       let archiveEntry = null;
@@ -269,7 +315,7 @@ async function runSimulationTick() {
           value: response.writeToArchive.value,
           timestamp: Date.now()
         };
-        worldArchive.push(archiveEntry);
+        state.worldArchive.push(archiveEntry);
       }
 
       let audioBase64 = null;
@@ -288,27 +334,30 @@ async function runSimulationTick() {
             imageBase64: imgB64,
             timestamp: Date.now()
           };
-          worldImages.push(newImage);
+          state.worldImages.push(newImage);
         }
       }
 
-      broadcast('tick', { 
-        historyEntry, 
-        newObject, 
-        newLaw, 
-        archiveEntry, 
-        audioBase64, 
+      broadcast('tick', {
+        historyEntry,
+        newObject,
+        newLaw,
+        archiveEntry,
+        audioBase64,
         newImage,
-        resources: worldResources 
+        resources: state.worldResources
       });
 
-      const state = {
-        worldHistory, worldObjects, worldConstitution,
-        worldArchive, worldResources, worldImages,
-        currentAgentIndex
-      };
-      saveState(state).catch(() => {});
-      appendEvent({ type: 'tick', agentName: agent.name, historyEntry, newObject: !!newObject, newLaw: !!newLaw }).catch(() => {});
+      saveState({
+        worldHistory: state.worldHistory,
+        worldObjects: state.worldObjects,
+        worldConstitution: state.worldConstitution,
+        worldArchive: state.worldArchive,
+        worldResources: state.worldResources,
+        worldImages: state.worldImages,
+        currentAgentIndex: state.currentAgentIndex
+      }, userId).catch(() => {});
+      appendEvent({ type: 'tick', agentName: agent.name, historyEntry, newObject: !!newObject, newLaw: !!newLaw }, userId).catch(() => {});
     } else {
       updateAgentStatus(agent.name, 'idle', 'Remained silent.');
     }
@@ -317,28 +366,12 @@ async function runSimulationTick() {
     updateAgentStatus(agent.name, 'error', 'Neural link interrupted.');
   }
 
-  currentAgentIndex = (currentAgentIndex + 1) % agents.length;
+  state.currentAgentIndex = (state.currentAgentIndex + 1) % agents.length;
 }
 
 const PORT = process.env.PORT || 3001;
 
-async function init() {
-  const loaded = await loadState();
-  if (loaded && 'worldHistory' in loaded) {
-    worldHistory = loaded.worldHistory || [];
-    worldObjects = loaded.worldObjects || [];
-    worldConstitution = loaded.worldConstitution || [];
-    worldArchive = loaded.worldArchive || [];
-    worldResources = loaded.worldResources ?? INITIAL_RESOURCES;
-    worldImages = loaded.worldImages || [];
-    currentAgentIndex = loaded.currentAgentIndex ?? 0;
-    console.log('Loaded state from Firestore:', worldHistory.length, 'events');
-  }
-}
-
-init().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Backend server running on port ${PORT}`);
-    if (isFirestore()) console.log('Firestore persistence enabled.');
-  });
+app.listen(PORT, () => {
+  console.log(`Backend server running on port ${PORT}`);
+  if (isFirestore()) console.log('Firestore persistence enabled (per-user).');
 });

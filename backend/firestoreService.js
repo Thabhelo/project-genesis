@@ -1,13 +1,9 @@
 /**
  * Firestore persistence for Project Genesis.
- * When serviceAccountKey.json exists, state syncs to Firestore.
- * Otherwise runs in-memory only.
+ * Per-user state stored in simulation/{userId}.
  */
 
 const { db } = require('./firebaseAdmin');
-
-const STATE_DOC = 'world';
-const EVENTS_COLLECTION = 'events';
 
 function isFirestore() {
   try {
@@ -18,11 +14,17 @@ function isFirestore() {
   }
 }
 
-async function saveState(state) {
+function stateDocId(userId) {
+  return userId ? `user_${userId.replace(/\//g, '_')}` : 'world';
+}
+
+async function saveState(state, userId) {
   if (!isFirestore()) return;
+  const docId = stateDocId(userId);
   try {
-    await db.collection('simulation').doc(STATE_DOC).set({
+    await db.collection('simulation').doc(docId).set({
       ...state,
+      userId: userId || null,
       updatedAt: Date.now()
     });
   } catch (e) {
@@ -30,10 +32,11 @@ async function saveState(state) {
   }
 }
 
-async function loadState() {
+async function loadState(userId) {
   if (!isFirestore()) return null;
+  const docId = stateDocId(userId);
   try {
-    const doc = await db.collection('simulation').doc(STATE_DOC).get();
+    const doc = await db.collection('simulation').doc(docId).get();
     return doc.exists ? doc.data() : null;
   } catch (e) {
     console.warn('Firestore load failed:', e.message);
@@ -41,11 +44,12 @@ async function loadState() {
   }
 }
 
-async function appendEvent(event) {
+async function appendEvent(event, userId) {
   if (!isFirestore()) return;
   try {
     await db.collection('events').add({
       ...event,
+      userId: userId || null,
       timestamp: Date.now()
     });
   } catch (e) {
