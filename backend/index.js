@@ -3,7 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
-const { generateAgentResponse } = require('./geminiService');
+const { generateAgentResponse, getAgentKeysCount } = require('./geminiService');
 const { speakText } = require('./elevenlabsService');
 const { generateImage } = require('./imageService');
 const { saveState, loadState, appendEvent, isFirestore } = require('./firestoreService');
@@ -82,6 +82,17 @@ function broadcastToUser(state, event, data) {
     } catch (e) {}
   });
 }
+
+// Health check (no auth) - for curl testing
+app.get('/api/health', (req, res) => {
+  const agentKeysCount = getAgentKeysCount();
+  res.json({
+    status: 'ok',
+    agentKeysCount,
+    perAgentKeys: agentKeysCount >= 5,
+    humanChatEnabled: true
+  });
+});
 
 // SSE stream - requires token in query: /api/stream?token=...
 app.get('/api/stream', verifyAuth, async (req, res) => {
@@ -316,7 +327,8 @@ async function runSimulationTick(userId) {
       recentHistory,
       state.worldObjects,
       state.worldArchive,
-      state.worldResources
+      state.worldResources,
+      state.currentAgentIndex
     );
 
     if (response) {

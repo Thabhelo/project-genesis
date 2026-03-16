@@ -1,9 +1,28 @@
 const { GoogleGenAI } = require('@google/genai');
 require('dotenv').config();
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Per-agent API keys to avoid rate limits (5 keys = 5x quota). Fallback: single GEMINI_API_KEY.
+// Use | as delimiter for gcloud (commas break --set-env-vars). Comma also supported for .env.
+const API_KEYS = (() => {
+  const keysStr = process.env.GEMINI_API_KEYS;
+  if (keysStr && keysStr.trim()) {
+    const keys = keysStr.split(/[,|]/).map(k => k.trim()).filter(Boolean);
+    if (keys.length > 0) return keys;
+  }
+  const fallback = process.env.GEMINI_API_KEY;
+  return fallback ? [fallback, fallback, fallback, fallback, fallback] : [];
+})();
 
-async function generateAgentResponse(agentPersona, contextHistory, currentObjects, worldArchive, resourceCount) {
+function getClientForAgent(agentIndex) {
+  const key = API_KEYS[agentIndex % API_KEYS.length] || API_KEYS[0];
+  return key ? new GoogleGenAI({ apiKey: key }) : null;
+}
+
+function getAgentKeysCount() {
+  return API_KEYS.length;
+}
+
+async function generateAgentResponse(agentPersona, contextHistory, currentObjects, worldArchive, resourceCount, agentIndex = 0) {
   const archiveText = worldArchive.length === 0
     ? 'The archive is empty.'
     : worldArchive.slice(-20).map(a => `[${a.key}]: ${a.value}`).join('\n');
@@ -50,6 +69,12 @@ Respond ONLY with valid JSON:
 }
   `;
 
+  const ai = getClientForAgent(agentIndex);
+  if (!ai) {
+    console.error("No Gemini API key configured.");
+    return null;
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -84,4 +109,4 @@ Respond ONLY with valid JSON:
   }
 }
 
-module.exports = { generateAgentResponse };
+module.exports = { generateAgentResponse, getAgentKeysCount };

@@ -41,6 +41,8 @@ cd ..
 Create a `.env` file in the `backend` directory (see `backend/.env.example`):
 ```env
 GEMINI_API_KEY=your_actual_api_key_here
+# Optional: Per-agent keys (5x quota). Use comma in .env, or | for gcloud (commas break --set-env-vars)
+# GEMINI_API_KEYS=key1|key2|key3|key4|key5
 PORT=3001
 # Optional: Enable voice (agents may choose to speak their messages)
 ELEVENLABS_API_KEY=your_elevenlabs_key

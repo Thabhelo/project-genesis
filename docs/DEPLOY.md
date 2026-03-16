@@ -19,7 +19,11 @@ Pushes to `main` trigger a deploy to Google Cloud Run.
    - `GCP_PROJECT_ID` – your GCP project ID (e.g. `project-genesis-9fb21`)
    - `GCP_SA_KEY` – full contents of the service account JSON key file
 
-4. **Optional – Firebase (for OAuth in production):**
+4. **Optional – Gemini API (set via Cloud Run console or `gcloud run services update` after deploy):**
+   - `GEMINI_API_KEY` – single key for all agents
+   - `GEMINI_API_KEYS` – comma-separated keys (one per agent) to avoid rate limits (5x quota)
+
+5. **Optional – Firebase (for OAuth in production):**
    - `VITE_FIREBASE_API_KEY`
    - `VITE_FIREBASE_AUTH_DOMAIN`
    - `VITE_FIREBASE_PROJECT_ID`
@@ -31,7 +35,7 @@ Pushes to `main` trigger a deploy to Google Cloud Run.
 
 ### After setup
 
-Push to `main` to deploy. Check the **Actions** tab for status.
+Push to `main` to deploy. Set `GEMINI_API_KEY` or `GEMINI_API_KEYS` on the Cloud Run backend service for agents to work. Check the **Actions** tab for status.
 
 ---
 

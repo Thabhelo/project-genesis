@@ -33,8 +33,11 @@ echo "Backend URL: $BACKEND_URL"
 echo "Granting public access to Cloud Run services..."
 gcloud run services add-iam-policy-binding project-genesis-backend --region="$REGION" --member="allUsers" --role="roles/run.invoker" --project="$PROJECT_ID" --quiet 2>/dev/null || true
 
-# Set backend env vars (GEMINI_API_KEY etc) - user must run separately if not set
-if [ -n "$GEMINI_API_KEY" ]; then
+# Set backend env vars (GEMINI_API_KEY or GEMINI_API_KEYS) - user must run separately if not set
+if [ -n "$GEMINI_API_KEYS" ]; then
+  echo "Setting GEMINI_API_KEYS (per-agent keys for rate limit relief)..."
+  gcloud run services update project-genesis-backend --region "$REGION" --set-env-vars "GEMINI_API_KEYS=$GEMINI_API_KEYS" --project "$PROJECT_ID" --quiet
+elif [ -n "$GEMINI_API_KEY" ]; then
   echo "Setting GEMINI_API_KEY..."
   gcloud run services update project-genesis-backend --region "$REGION" --set-env-vars "GEMINI_API_KEY=$GEMINI_API_KEY" --project "$PROJECT_ID" --quiet
 fi
@@ -69,9 +72,13 @@ echo "Frontend: $FRONTEND_URL"
 echo "Backend:  $BACKEND_URL"
 echo "=========================================="
 echo ""
-echo "To set GEMINI_API_KEY (required for agents):"
+echo "To set API keys (required for agents):"
+echo "  # Single key:"
 echo "  export GEMINI_API_KEY=your_key"
 echo "  gcloud run services update project-genesis-backend --region $REGION --set-env-vars GEMINI_API_KEY=\$GEMINI_API_KEY"
+echo "  # Or per-agent keys (5x quota, avoids rate limits). Use | not comma for gcloud:"
+echo "  export GEMINI_API_KEYS='key1|key2|key3|key4|key5'"
+echo "  gcloud run services update project-genesis-backend --region $REGION --set-env-vars GEMINI_API_KEYS=\$GEMINI_API_KEYS"
 echo ""
 echo "For Firestore: Ensure the Cloud Run service account has Firestore permissions."
 echo "  (Firebase project must match GCP project, or use serviceAccountKey.json as secret)"
