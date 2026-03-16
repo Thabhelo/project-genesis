@@ -30,7 +30,7 @@ ${archiveText}
 Current objects in the world:
 ${currentObjects.length === 0 ? "The world is empty." : currentObjects.map(o => `- A ${o.color} ${o.type} at [${o.position.join(', ')}] by ${o.creator}`).join('\n')}
 
-Recent dialogue:
+Recent dialogue (Human = the creator; you may respond to their questions, instructions, or directions):
 ${contextHistory.length === 0 ? "No one has spoken yet." : contextHistory.map(h => `${h.agentName}: ${h.message}`).join('\n')}
 
 Respond ONLY with valid JSON:
