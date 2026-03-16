@@ -8,7 +8,7 @@ import {
   LayoutGrid, Trophy, History, Users2, Ghost,
   ScrollText, Globe2, LogOut,
   Building2, Landmark, Gem, TreePine, Archive,
-  Search, Github, Sparkles,
+  Search, Github, Sparkles, User, Send,
 } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -146,6 +146,31 @@ function App() {
       });
     } catch (e) {
       console.error(`Failed to call ${endpoint}`, e);
+    }
+  };
+
+  const [humanMessage, setHumanMessage] = useState('');
+  const [sendingHuman, setSendingHuman] = useState(false);
+  const sendHumanMessage = async () => {
+    const text = humanMessage.trim();
+    if (!text || sendingHuman) return;
+    try {
+      setSendingHuman(true);
+      const token = await getIdToken();
+      if (!token) return;
+      const res = await fetch(`${API_BASE}/api/human/message`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      if (res.ok) {
+        setHumanMessage('');
+        // SSE broadcast will add the entry to history
+      }
+    } catch (e) {
+      console.error('Failed to send message', e);
+    } finally {
+      setSendingHuman(false);
     }
   };
 
@@ -627,6 +652,10 @@ function App() {
                   AGENTS={AGENTS}
                   feedEndRef={feedEndRef}
                   getObjectCount={getObjectCount}
+                  humanMessage={humanMessage}
+                  setHumanMessage={setHumanMessage}
+                  sendHumanMessage={sendHumanMessage}
+                  sendingHuman={sendingHuman}
                 />
               </div>
             </Panel>
@@ -659,7 +688,11 @@ function TabContent({
   resources,
   AGENTS,
   feedEndRef,
-  getObjectCount
+  getObjectCount,
+  humanMessage,
+  setHumanMessage,
+  sendHumanMessage,
+  sendingHuman
 }: {
   activeTab: string;
   filteredHistory: any[];
@@ -673,46 +706,85 @@ function TabContent({
   AGENTS: AgentDef[];
   feedEndRef: React.RefObject<HTMLDivElement | null>;
   getObjectCount: (type: string) => number;
+  humanMessage?: string;
+  setHumanMessage?: (v: string) => void;
+  sendHumanMessage?: () => void;
+  sendingHuman?: boolean;
 }) {
   const getCount = getObjectCount;
 
-  const renderActivityFeed = () => (
-    <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-      {filteredHistory.length === 0 ? (
-        <div className="text-[15px] text-[#6B7280] text-center mt-6 italic">
-          {searchQuery ? 'No matches found.' : 'No activity yet.'}
-        </div>
-      ) : (
-        <AnimatePresence initial={false}>
-          {[...filteredHistory].reverse().map((entry: any, i: number) => {
-            const agent = AGENTS.find((a: AgentDef) => a.name === entry.agentName) || AGENTS[0];
-            return (
-              <motion.div
-                key={entry.timestamp ?? i}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex gap-3 items-start p-3 rounded-xl bg-[#E0E5EC] ${S_INSET_SM} transition-shadow duration-200`}
-              >
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br ${agent.gradient} shadow-[inset_2px_2px_4px_rgba(0,0,0,0.15),inset_-2px_-2px_4px_rgba(255,255,255,0.2)]`}>
-                  <span className="text-white text-[12px] font-display font-bold">{agent.name[0]}</span>
-                </div>
-                <div className="flex-1 min-w-0 pt-0.5">
-                  <p className="text-[14px] leading-snug">
-                    <span className="font-display font-semibold text-[#3D4852]">{entry.agentName}</span>{' '}
-                    <span className="text-[#6B7280]">stated</span>
-                  </p>
-                  <p className="text-[14px] text-[#3D4852] mt-0.5 break-words leading-relaxed">"{entry.message}"</p>
-                  <span className="text-[12px] text-[#6B7280] tabular-nums mt-1 block">
-                    {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-      )}
-      <div ref={feedEndRef} />
+  const renderHumanInput = () => (
+    <div className="shrink-0 pt-3 mt-2 border-t border-[#c5cdd9]/60">
+      <p className="text-[12px] text-[#6B7280] mb-2 font-medium">Message all agents</p>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={humanMessage ?? ''}
+          onChange={(e) => setHumanMessage?.(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendHumanMessage?.()}
+          placeholder="Ask a question, give instructions..."
+          className={`flex-1 px-3 py-2.5 rounded-xl text-[14px] bg-[#E0E5EC] ${S_INSET_SM} placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#6C63FF]/40`}
+          disabled={sendingHuman}
+        />
+        <button
+          onClick={() => sendHumanMessage?.()}
+          disabled={!humanMessage?.trim() || sendingHuman}
+          className={`px-4 py-2.5 rounded-xl flex items-center gap-1.5 text-[14px] font-medium transition-all ${(humanMessage?.trim() && !sendingHuman) ? 'bg-[#6C63FF] text-white shadow-[5px_5px_10px_rgb(163,177,198,0.55),-5px_-5px_10px_rgba(255,255,255,0.5)] hover:opacity-90' : 'bg-[#E0E5EC] text-[#9CA3AF] cursor-not-allowed'}`}
+        >
+          <Send size={14} />
+          Send
+        </button>
+      </div>
     </div>
+  );
+
+  const renderActivityFeed = () => (
+    <>
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-0">
+        {filteredHistory.length === 0 ? (
+          <div className="text-[15px] text-[#6B7280] text-center mt-6 italic">
+            {searchQuery ? 'No matches found.' : 'No activity yet.'}
+          </div>
+        ) : (
+          <AnimatePresence initial={false}>
+            {[...filteredHistory].reverse().map((entry: any, i: number) => {
+              const isHuman = entry.agentName === 'Human';
+              const agent = isHuman ? null : AGENTS.find((a: AgentDef) => a.name === entry.agentName) || AGENTS[0];
+              return (
+                <motion.div
+                  key={`${entry.timestamp}-${i}`}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex gap-3 items-start p-3 rounded-xl bg-[#E0E5EC] ${S_INSET_SM} transition-shadow duration-200 ${isHuman ? 'ring-1 ring-[#6C63FF]/30' : ''}`}
+                >
+                  {isHuman ? (
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#6C63FF] to-[#38B2AC] shadow-[inset_2px_2px_4px_rgba(0,0,0,0.15),inset_-2px_-2px_4px_rgba(255,255,255,0.2)]">
+                      <User size={12} className="text-white" />
+                    </div>
+                  ) : (
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br ${agent!.gradient} shadow-[inset_2px_2px_4px_rgba(0,0,0,0.15),inset_-2px_-2px_4px_rgba(255,255,255,0.2)]`}>
+                      <span className="text-white text-[12px] font-display font-bold">{agent!.name[0]}</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <p className="text-[14px] leading-snug">
+                      <span className="font-display font-semibold text-[#3D4852]">{entry.agentName}</span>{' '}
+                      <span className="text-[#6B7280]">{isHuman ? 'intervened' : 'stated'}</span>
+                    </p>
+                    <p className="text-[14px] text-[#3D4852] mt-0.5 break-words leading-relaxed">"{entry.message}"</p>
+                    <span className="text-[12px] text-[#6B7280] tabular-nums mt-1 block">
+                      {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        )}
+        <div ref={feedEndRef} />
+      </div>
+      {(activeTab === 'All Entities' || activeTab === 'Timeline') && renderHumanInput()}
+    </>
   );
 
   const renderConstitution = () => (

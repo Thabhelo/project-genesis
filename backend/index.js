@@ -27,10 +27,21 @@ const agents = [
 /** Per-user state: userId -> { worldHistory, worldObjects, ... } */
 const userStates = new Map();
 
+function getInitialPlanet() {
+  return {
+    id: 'planet-0',
+    type: 'sphere',
+    color: '#0ea5e9',
+    position: [0, 0, 0],
+    scale: [6, 6, 6],
+    creator: 'World'
+  };
+}
+
 function createEmptyState() {
   return {
     worldHistory: [],
-    worldObjects: [],
+    worldObjects: [getInitialPlanet()],
     worldConstitution: [],
     worldArchive: [],
     worldResources: INITIAL_RESOURCES,
@@ -51,7 +62,8 @@ async function getOrCreateUserState(userId) {
     const loaded = await loadState(userId);
     if (loaded && 'worldHistory' in loaded) {
       state.worldHistory = loaded.worldHistory || [];
-      state.worldObjects = loaded.worldObjects || [];
+      const loadedObjs = loaded.worldObjects || [];
+      state.worldObjects = loadedObjs.length === 0 ? [getInitialPlanet()] : loadedObjs;
       state.worldConstitution = loaded.worldConstitution || [];
       state.worldArchive = loaded.worldArchive || [];
       state.worldResources = loaded.worldResources ?? INITIAL_RESOURCES;
@@ -127,7 +139,7 @@ app.post('/api/simulation/reset', verifyAuth, async (req, res) => {
   const { userId } = req;
   const state = await getOrCreateUserState(userId);
   state.worldHistory = [];
-  state.worldObjects = [];
+  state.worldObjects = [getInitialPlanet()];
   state.worldConstitution = [];
   state.worldArchive = [];
   state.worldResources = INITIAL_RESOURCES;
@@ -154,6 +166,43 @@ app.post('/api/simulation/reset', verifyAuth, async (req, res) => {
     status: state.currentStatus
   });
   res.json({ message: "Reset successful" });
+});
+
+app.post('/api/human/message', verifyAuth, async (req, res) => {
+  const { userId } = req;
+  const { message } = req.body || {};
+  const text = typeof message === 'string' ? message.trim() : '';
+  if (!text) return res.status(400).json({ message: 'Message is required' });
+
+  const state = await getOrCreateUserState(userId);
+  const historyEntry = {
+    agentName: 'Human',
+    message: text,
+    timestamp: Date.now()
+  };
+  state.worldHistory.push(historyEntry);
+
+  broadcastToUser(state, 'tick', {
+    historyEntry,
+    newObject: null,
+    newLaw: null,
+    archiveEntry: null,
+    audioBase64: null,
+    newImage: null,
+    resources: state.worldResources
+  });
+
+  await saveState({
+    worldHistory: state.worldHistory,
+    worldObjects: state.worldObjects,
+    worldConstitution: state.worldConstitution,
+    worldArchive: state.worldArchive,
+    worldResources: state.worldResources,
+    worldImages: state.worldImages,
+    currentAgentIndex: state.currentAgentIndex
+  }, userId).catch(() => {});
+
+  res.json({ message: 'Sent', historyEntry });
 });
 
 const CHECKPOINT_DIR = path.join(__dirname, 'checkpoints');

@@ -19,10 +19,11 @@ interface WorldProps {
 
 function AnimatedMesh({ obj }: { obj: WorldObject }) {
   const meshRef = useRef<any>(null);
+  const isPlanet = obj.creator === 'World' || obj.id === 'planet-0';
 
   useGSAP(() => {
-    if (meshRef.current) {
-      // Pop-in animation
+    if (meshRef.current && !isPlanet) {
+      // Pop-in animation for agent-built objects
       gsap.fromTo(meshRef.current.scale, 
         { x: 0, y: 0, z: 0 }, 
         { x: obj.scale[0], y: obj.scale[1], z: obj.scale[2], duration: 1, ease: "elastic.out(1, 0.5)" }
@@ -33,10 +34,10 @@ function AnimatedMesh({ obj }: { obj: WorldObject }) {
         { y: obj.position[1], duration: 1, ease: "bounce.out" }
       );
     }
-  }, [obj.id]);
+  }, [obj.id, isPlanet]);
 
   return (
-    <mesh ref={meshRef} position={obj.position} castShadow receiveShadow>
+    <mesh ref={meshRef} position={obj.position} scale={isPlanet ? obj.scale : undefined} castShadow receiveShadow>
       {obj.type === 'box' && <boxGeometry args={[1, 1, 1]} />}
       {obj.type === 'sphere' && <sphereGeometry args={[0.5, 32, 32]} />}
       {obj.type === 'cylinder' && <cylinderGeometry args={[0.5, 0.5, 1, 32]} />}
