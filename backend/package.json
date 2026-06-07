@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --check index.js && node --check geminiService.js && node --check elevenlabsService.js && node --check authMiddleware.js && node --check firestoreService.js && node --check firebaseAdmin.js && node --check imageService.js"
   },
   "keywords": [],
   "author": "",

@@ -15,11 +15,13 @@ export function useAuth() {
   useEffect(() => {
     const auth = initFirebase();
     if (!auth) {
-      setLoading(false);
-      setAuthReady(false);
+      queueMicrotask(() => {
+        setLoading(false);
+        setAuthReady(false);
+      });
       return;
     }
-    setAuthReady(true);
+    queueMicrotask(() => setAuthReady(true));
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);

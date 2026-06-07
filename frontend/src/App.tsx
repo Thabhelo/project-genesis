@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { World3D } from './components/World3D';
 import AIThinking from './components/AIThinking';
@@ -18,36 +19,70 @@ const REPO_URL = 'https://github.com/Thabhelo/project-genesis';
 
 const GREEK_LETTERS: Record<string, string> = { Alpha: "α", Beta: "β", Gamma: "γ", Delta: "δ", Epsilon: "ε" };
 
-// Agent colors shifted darker for WCAG AA on #E0E5EC
+type Vector3 = [number, number, number];
+
+type HistoryEntry = {
+  agentName: string;
+  message: string;
+  timestamp: string | number | Date;
+};
+
+type GenesisObject = {
+  id: string;
+  type: string;
+  color: string;
+  position: Vector3;
+  scale: Vector3;
+  creator: string;
+};
+
+type ConstitutionEntry = {
+  id: string;
+  agentName: string;
+  law: string;
+};
+
+type ArchiveEntry = {
+  id: string;
+  key: string;
+  value: string;
+};
+
+type ImageEntry = {
+  id: string;
+  imageBase64: string;
+  prompt: string;
+};
+
+// Agent accents tuned for a dark production dashboard.
 const AGENTS = [
-  { name: "Alpha",   role: "The Architect",   color: "text-[#4F46E5]", bg: "bg-[#4F46E5]/10", border: "border-[#4F46E5]/20", gradient: "from-[#818cf8] to-[#6366f1]" },
-  { name: "Beta",    role: "The Diplomat",    color: "text-[#9333EA]", bg: "bg-[#9333EA]/10", border: "border-[#9333EA]/20", gradient: "from-[#c084fc] to-[#a855f7]" },
-  { name: "Gamma",   role: "The Critique",    color: "text-[#DB2777]", bg: "bg-[#DB2777]/10", border: "border-[#DB2777]/20", gradient: "from-[#f472b6] to-[#d946ef]" },
-  { name: "Delta",   role: "The Merchant",    color: "text-[#D97706]", bg: "bg-[#D97706]/10", border: "border-[#D97706]/20", gradient: "from-[#fbbf24] to-[#f59e0b]" },
-  { name: "Epsilon", role: "The Philosopher", color: "text-[#059669]", bg: "bg-[#059669]/10", border: "border-[#059669]/20", gradient: "from-[#34d399] to-[#10b981]" },
+  { name: "Alpha",   role: "The Architect",   color: "text-[#8B5CF6]", bg: "bg-[#8B5CF6]/10", border: "border-[#8B5CF6]/25", gradient: "from-[#8B5CF6] to-[#38BDF8]" },
+  { name: "Beta",    role: "The Diplomat",    color: "text-[#22D3EE]", bg: "bg-[#22D3EE]/10", border: "border-[#22D3EE]/25", gradient: "from-[#22D3EE] to-[#2DD4BF]" },
+  { name: "Gamma",   role: "The Critique",    color: "text-[#F472B6]", bg: "bg-[#F472B6]/10", border: "border-[#F472B6]/25", gradient: "from-[#F472B6] to-[#FB7185]" },
+  { name: "Delta",   role: "The Merchant",    color: "text-[#F59E0B]", bg: "bg-[#F59E0B]/10", border: "border-[#F59E0B]/25", gradient: "from-[#F59E0B] to-[#F97316]" },
+  { name: "Epsilon", role: "The Philosopher", color: "text-[#22C55E]", bg: "bg-[#22C55E]/10", border: "border-[#22C55E]/25", gradient: "from-[#22C55E] to-[#84CC16]" },
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // ──────────────────────────────────────────────────────────
-// Reusable shadow tokens as Tailwind arbitrary-value strings
+// Production surface tokens for the dark glass dashboard system
 // ──────────────────────────────────────────────────────────
-const NEU_RAISED     = "shadow-[9px_9px_16px_rgb(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.55)]";
-const NEU_LIFTED     = "shadow-[12px_12px_20px_rgb(163,177,198,0.7),-12px_-12px_20px_rgba(255,255,255,0.6)]";
-const NEU_SM         = "shadow-[5px_5px_10px_rgb(163,177,198,0.55),-5px_-5px_10px_rgba(255,255,255,0.5)]";
-const NEU_INSET      = "shadow-[inset_6px_6px_10px_rgb(163,177,198,0.6),inset_-6px_-6px_10px_rgba(255,255,255,0.5)]";
-const NEU_INSET_DEEP = "shadow-[inset_10px_10px_20px_rgb(163,177,198,0.7),inset_-10px_-10px_20px_rgba(255,255,255,0.6)]";
-const NEU_INSET_SM   = "shadow-[inset_3px_3px_6px_rgb(163,177,198,0.55),inset_-3px_-3px_6px_rgba(255,255,255,0.5)]";
+const NEU_RAISED     = "border border-white/10 bg-[#0F172A]/82 shadow-[0_22px_70px_rgba(0,0,0,0.36)] backdrop-blur-xl";
+const NEU_SM         = "border border-white/10 bg-white/[0.045] shadow-[0_12px_32px_rgba(0,0,0,0.26)]";
+const NEU_INSET      = "border border-white/10 bg-[#020617]/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]";
+const NEU_INSET_DEEP = "border border-white/10 bg-[#020617]/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_80px_rgba(0,0,0,0.42)]";
+const NEU_INSET_SM   = "border border-white/10 bg-white/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]";
 
 function App() {
   const { user, loading: authLoading, authReady, signInWithGoogle, signInWithGitHub, signOut, getIdToken } = useAuth();
   const [signInPrompt, setSignInPrompt] = useState(false);
-  const [history, setHistory] = useState<any[]>([]);
-  const [objects, setObjects] = useState<any[]>([]);
-  const [constitution, setConstitution] = useState<any[]>([]);
-  const [archive, setArchive] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [objects, setObjects] = useState<GenesisObject[]>([]);
+  const [constitution, setConstitution] = useState<ConstitutionEntry[]>([]);
+  const [archive, setArchive] = useState<ArchiveEntry[]>([]);
   const [resources, setResources] = useState(1000);
-  const [images, setImages] = useState<any[]>([]);
+  const [images, setImages] = useState<ImageEntry[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [agentStates, setAgentStates] = useState<Record<string, {activity: string, details: string}>>({});
   const [thinkingLogs, setThinkingLogs] = useState<{id?: string; agentName: string; message: string; elapsedMs: number}[]>([]);
@@ -208,7 +243,7 @@ function App() {
   const objectsByType = (type: string) => objects.filter(o => o.type === type);
 
   return (
-    <div className="flex h-screen w-screen bg-[#E0E5EC] text-[#3D4852] overflow-hidden text-[17px]">
+    <div className="flex h-screen w-screen bg-[#020617] text-slate-100 overflow-hidden text-[16px] selection:bg-cyan-300/20 selection:text-cyan-100">
 
       {/* ── Sign-in modal ── */}
       <AnimatePresence>
@@ -217,7 +252,7 @@ function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#E0E5EC]/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#020617]/82 backdrop-blur-md"
             onClick={() => setSignInPrompt(false)}
           >
             <motion.div
@@ -225,25 +260,25 @@ function App() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.92, opacity: 0, y: 16 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className={`glass-modal rounded-[32px] p-8 max-w-sm mx-4`}
+              className="glass-modal rounded-[28px] p-8 max-w-sm mx-4"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 mb-5">
-                <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br from-[#6C63FF] to-[#38B2AC] flex items-center justify-center ${NEU_SM}`}>
+                <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br from-[#22D3EE] to-[#8B5CF6] flex items-center justify-center ${NEU_SM}`}>
                   <Sparkles size={16} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-[#3D4852] text-[18px] leading-tight">Sign in required</h3>
-                  <p className="text-[#6B7280] text-[14px]">To run the simulation</p>
+                  <h3 className="font-display font-bold text-slate-50 text-[18px] leading-tight">Sign in required</h3>
+                  <p className="text-slate-400 text-[14px]">To run the simulation</p>
                 </div>
               </div>
-              <p className="text-[#6B7280] text-[15px] mb-6 leading-relaxed">
+              <p className="text-slate-300 text-[15px] mb-6 leading-relaxed">
                 Sign in with Google or GitHub before starting. This ensures accountability and prevents unattended runs.
               </p>
               <div className="flex flex-col gap-2.5">
                 <button
                   onClick={signInWithGoogle}
-                  className={`flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl bg-[#E0E5EC] text-[#3D4852] text-[15px] font-medium transition-all duration-300 ${NEU_SM} hover:${NEU_RAISED} active:${NEU_INSET_SM}`}
+                  className={`flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-slate-100 text-[15px] font-medium transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -255,7 +290,7 @@ function App() {
                 </button>
                 <button
                   onClick={signInWithGitHub}
-                  className={`flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl bg-[#E0E5EC] text-[#3D4852] text-[15px] font-medium transition-all duration-300 ${NEU_SM} hover:${NEU_RAISED} active:${NEU_INSET_SM}`}
+                  className={`flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-slate-100 text-[15px] font-medium transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
                 >
                   <Github size={15} />
                   Continue with GitHub
@@ -263,7 +298,7 @@ function App() {
               </div>
               <button
                 onClick={() => setSignInPrompt(false)}
-                className="w-full mt-4 py-2 text-[14px] text-[#6B7280] hover:text-[#3D4852] transition-colors rounded-xl"
+                className="w-full mt-4 py-2 text-[14px] text-slate-400 hover:text-slate-100 transition-colors rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
@@ -273,20 +308,20 @@ function App() {
       </AnimatePresence>
 
       {/* ── Main layout ── */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#E0E5EC] overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(139,92,246,0.15),transparent_34%),#020617] overflow-hidden">
 
         {/* Header */}
-        <header className={`h-14 flex items-center justify-between px-5 shrink-0 bg-[#E0E5EC] ${NEU_SM} z-10`} style={{ boxShadow: '0 4px 12px rgb(163 177 198 / 0.45), 0 -2px 6px rgba(255 255 255 / 0.6)' }}>
+        <header className="h-16 flex items-center justify-between px-5 shrink-0 border-b border-white/10 bg-[#020617]/76 backdrop-blur-xl z-10">
           <div className="flex items-center gap-3">
             <button
               onClick={() => apiCall('reset')}
               title="Reset World"
-              className={`p-2 rounded-xl text-[#6B7280] hover:text-[#3D4852] transition-all duration-200 bg-[#E0E5EC] ${NEU_SM} hover:${NEU_RAISED} active:${NEU_INSET_SM}`}
+              className={`p-2 rounded-xl text-slate-400 hover:text-slate-50 transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
             >
               <RotateCcw size={15} />
             </button>
-            <div className="flex items-center gap-2 text-[15px] text-[#3D4852] font-medium">
-              <Globe2 size={14} className="text-[#6C63FF]" />
+            <div className="flex items-center gap-2 text-[15px] text-slate-100 font-medium">
+              <Globe2 size={14} className="text-cyan-300" />
               <span className="font-display">World State</span>
             </div>
           </div>
@@ -296,7 +331,7 @@ function App() {
             <button
               onClick={() => apiCall('save')}
               title="Save Checkpoint"
-              className={`p-2 rounded-xl text-[#6B7280] hover:text-[#3D4852] transition-all duration-200 bg-[#E0E5EC] ${NEU_SM} hover:${NEU_RAISED} active:${NEU_INSET_SM}`}
+              className={`p-2 rounded-xl text-slate-400 hover:text-slate-50 transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
             >
               <Save size={15} />
             </button>
@@ -304,7 +339,7 @@ function App() {
             <button
               onClick={() => apiCall('load')}
               title="Load Checkpoint"
-              className={`p-2 rounded-xl text-[#6B7280] hover:text-[#3D4852] transition-all duration-200 bg-[#E0E5EC] ${NEU_SM} hover:${NEU_RAISED} active:${NEU_INSET_SM}`}
+              className={`p-2 rounded-xl text-slate-400 hover:text-slate-50 transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
             >
               <FolderDown size={15} />
             </button>
@@ -312,21 +347,21 @@ function App() {
             <button
               onClick={exportTimelapse}
               title="Export Time-lapse"
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[#6B7280] hover:text-[#3D4852] transition-all duration-200 text-[14px] bg-[#E0E5EC] ${NEU_SM} hover:${NEU_RAISED} active:${NEU_INSET_SM}`}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-50 transition-all duration-200 text-[14px] cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
             >
               <CloudDownload size={15} />
               <span className="font-medium">Export</span>
             </button>
 
             {/* Search */}
-            <div className={`flex items-center gap-2 bg-[#E0E5EC] ${NEU_INSET} rounded-2xl px-3 py-2 w-56 focus-within:${NEU_INSET_DEEP} transition-all duration-300`}>
-              <Search size={13} className="text-[#6B7280] shrink-0" />
+            <div className={`flex items-center gap-2 ${NEU_INSET} rounded-2xl px-3 py-2 w-56 focus-within:border-cyan-300/40 transition-all duration-200`}>
+              <Search size={13} className="text-slate-500 shrink-0" />
               <input
                 type="text"
                 placeholder="Search simulation…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none outline-none text-[15px] w-full text-[#3D4852] placeholder:text-[#A0AEC0]"
+                className="bg-transparent border-none outline-none text-[15px] w-full text-slate-100 placeholder:text-slate-500"
               />
             </div>
 
@@ -336,7 +371,7 @@ function App() {
               target="_blank"
               rel="noopener noreferrer"
               title="View on GitHub"
-              className={`p-2 rounded-xl text-[#6B7280] hover:text-[#3D4852] transition-all duration-200 bg-[#E0E5EC] ${NEU_SM} hover:${NEU_RAISED} active:${NEU_INSET_SM}`}
+              className={`p-2 rounded-xl text-slate-400 hover:text-slate-50 transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
             >
               <Github size={15} />
             </a>
@@ -357,8 +392,8 @@ function App() {
                   key={agent.name}
                   whileHover={{ y: -2 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
-                  className={`flex-1 flex gap-4 px-5 py-4 rounded-2xl bg-[#E0E5EC] cursor-default relative overflow-hidden
-                    transition-shadow duration-300 ${NEU_RAISED} hover:${NEU_LIFTED}`}
+                  className={`flex-1 flex gap-4 px-5 py-4 rounded-2xl cursor-default relative overflow-hidden
+                    transition-all duration-300 hover:border-cyan-300/20 hover:bg-[#172033]/92 hover:shadow-[0_28px_90px_rgba(8,47,73,0.38),0_0_34px_rgba(34,211,238,0.08)] ${NEU_RAISED}`}
                 >
                   {/* Active gradient stripe */}
                   {isActive && (
@@ -367,7 +402,7 @@ function App() {
                   {/* Greek letter badge */}
                   <div className={`w-14 rounded-2xl shrink-0 flex items-center justify-center self-stretch
                     bg-gradient-to-br ${agent.gradient}
-                    shadow-[inset_4px_4px_10px_rgba(0,0,0,0.2),inset_-4px_-4px_10px_rgba(255,255,255,0.18)]`}>
+                    shadow-[0_12px_32px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.22)]`}>
                     <span className="text-white leading-none select-none"
                       style={{ fontSize: '34px', fontFamily: "'Georgia','Times New Roman',serif", fontWeight: 400 }}>
                       {GREEK_LETTERS[agent.name]}
@@ -377,24 +412,24 @@ function App() {
                   <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="font-display font-bold text-[#3D4852] text-[17px] leading-none truncate">{agent.name}</div>
-                        <div className={`text-[13px] mt-1 font-medium truncate ${isActive ? agent.color : 'text-[#6B7280]'}`}>
+                        <div className="font-display font-bold text-slate-50 text-[17px] leading-none truncate">{agent.name}</div>
+                        <div className={`text-[13px] mt-1 font-medium truncate ${isActive ? agent.color : 'text-slate-400'}`}>
                           {state.activity === 'Idle' ? agent.role : state.activity}
                         </div>
                       </div>
                       <div className={`shrink-0 px-2.5 py-1 rounded-full font-mono text-[11px] font-bold tracking-widest uppercase
-                        ${isActive ? `bg-gradient-to-r ${agent.gradient} text-white` : `shadow-[inset_2px_2px_4px_rgb(163,177,198,0.55),inset_-2px_-2px_4px_rgba(255,255,255,0.5)] text-[#6B7280]`}`}>
+                        ${isActive ? `bg-gradient-to-r ${agent.gradient} text-white shadow-[0_0_22px_rgba(34,211,238,0.18)]` : `border border-white/10 bg-white/[0.04] text-slate-400`}`}>
                         {isActive ? (state.activity || 'ACTIVE').slice(0, 9).toUpperCase() : 'STANDBY'}
                       </div>
                     </div>
                     {/* Terminal readout */}
                     <div className="flex items-center gap-2 mt-2.5">
-                      <code className="font-mono text-[12px] text-[#6B7280]/65 shrink-0">#{agentId}</code>
-                      <span className="text-[#6B7280]/25">·</span>
-                      <span className="font-mono text-[12px] text-[#6B7280]/65">{cycleCount} cycles</span>
+                      <code className="font-mono text-[12px] text-slate-500 shrink-0">#{agentId}</code>
+                      <span className="text-slate-700">·</span>
+                      <span className="font-mono text-[12px] text-slate-500">{cycleCount} cycles</span>
                       {isActive && (
                         <>
-                          <span className="text-[#6B7280]/25">·</span>
+                          <span className="text-slate-700">·</span>
                           <div className="flex items-end gap-[2px]">
                             {[5, 8, 4, 10, 6, 9, 5, 7].map((h, i) => (
                               <motion.span key={i}
@@ -418,13 +453,13 @@ function App() {
 
             {/* ── Left: Nav sidebar ── */}
             <Panel id="nav" defaultSize={12} minSize={8} maxSize={22} onResize={(size) => setNavPct(size.asPercentage)} className="min-w-0 flex flex-col overflow-hidden">
-              <div className={`h-full flex flex-col p-3 bg-[#E0E5EC] ${NEU_RAISED} rounded-2xl mr-2 overflow-hidden`}>
+              <div className={`h-full flex flex-col p-3 ${NEU_RAISED} rounded-2xl mr-2 overflow-hidden`}>
                 {/* Logo */}
                 <div className="flex items-center gap-2.5 px-2 mb-5 mt-1 shrink-0">
-                  <div className={`w-7 h-7 rounded-xl bg-gradient-to-br from-[#6C63FF] to-[#38B2AC] flex items-center justify-center shrink-0 ${NEU_SM}`}>
+                  <div className={`w-7 h-7 rounded-xl bg-gradient-to-br from-[#22D3EE] to-[#8B5CF6] flex items-center justify-center shrink-0 ${NEU_SM}`}>
                     <Sparkles size={13} className="text-white" />
                   </div>
-                  <span className="font-display font-bold text-[16px] text-[#3D4852] truncate">Genesis</span>
+                  <span className="font-display font-bold text-[16px] text-slate-50 truncate">Genesis</span>
                 </div>
 
                 {/* Start / Stop CTA */}
@@ -433,10 +468,10 @@ function App() {
                     if (!isRunning && authReady && !user) { setSignInPrompt(true); return; }
                     apiCall(isRunning ? 'stop' : 'start');
                   }}
-                  className={`w-full py-2.5 rounded-2xl font-display font-semibold text-[15px] flex items-center justify-center gap-2 mb-6 shrink-0 transition-all duration-300
+                  className={`w-full py-2.5 rounded-2xl font-display font-semibold text-[15px] flex items-center justify-center gap-2 mb-6 shrink-0 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-300/40
                     ${isRunning
-                      ? 'bg-gradient-to-r from-[#f472b6] to-[#d946ef] text-white shadow-[5px_5px_12px_rgba(219,39,119,0.35),-5px_-5px_12px_rgba(255,255,255,0.6)] hover:shadow-[7px_7px_16px_rgba(219,39,119,0.45),-7px_-7px_16px_rgba(255,255,255,0.65)] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)]'
-                      : 'bg-gradient-to-r from-[#6C63FF] to-[#38B2AC] text-white shadow-[5px_5px_12px_rgba(108,99,255,0.35),-5px_-5px_12px_rgba(255,255,255,0.6)] hover:shadow-[7px_7px_16px_rgba(108,99,255,0.45),-7px_-7px_16px_rgba(255,255,255,0.65)] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)]'
+                      ? 'bg-gradient-to-r from-[#FB7185] to-[#F472B6] text-white shadow-[0_16px_36px_rgba(244,114,182,0.22)] hover:shadow-[0_20px_44px_rgba(244,114,182,0.3)] hover:-translate-y-0.5'
+                      : 'bg-gradient-to-r from-[#22D3EE] to-[#8B5CF6] text-white shadow-[0_16px_36px_rgba(34,211,238,0.18)] hover:shadow-[0_20px_44px_rgba(139,92,246,0.24)] hover:-translate-y-0.5'
                     }`}
                 >
                   {isRunning
@@ -453,33 +488,33 @@ function App() {
                   <NavItem icon={<Users2   size={15}/>}   label="Factions"      active={activeTab === "Factions"}      onClick={() => setActiveTab("Factions")} />
                   <NavItem icon={<Ghost    size={15}/>}   label="The Void"      active={activeTab === "The Void"}      onClick={() => setActiveTab("The Void")} />
 
-                  <div className="mt-5 mb-2 px-3 text-[12px] font-display font-semibold text-[#6B7280] uppercase tracking-widest">Governance</div>
+                  <div className="mt-5 mb-2 px-3 text-[11px] font-display font-semibold text-slate-500 uppercase tracking-[0.18em]">Governance</div>
                   <NavItem
-                    icon={<ScrollText size={15} className="text-[#6C63FF]" />}
+                    icon={<ScrollText size={15} className="text-cyan-300" />}
                     label="Constitution"
                     badge={constitution.length.toString()}
                     active={activeTab === "Constitution"}
                     onClick={() => setActiveTab("Constitution")}
                   />
 
-                  <div className="mt-5 mb-2 px-3 text-[12px] font-display font-semibold text-[#6B7280] uppercase tracking-widest">World Domains</div>
-                  <NavItem icon={<Building2 size={15} className="text-[#4F46E5]" />} label="Infrastructure" badge={getObjectCount('box').toString()}      active={activeTab === "Infrastructure"} onClick={() => setActiveTab("Infrastructure")} />
-                  <NavItem icon={<Landmark  size={15} className="text-[#9333EA]" />} label="Monuments"      badge={getObjectCount('sphere').toString()}    active={activeTab === "Monuments"}      onClick={() => setActiveTab("Monuments")} />
-                  <NavItem icon={<Gem       size={15} className="text-[#D97706]" />} label="Materials"      badge={resources.toString()}                   active={activeTab === "Resources"}      onClick={() => setActiveTab("Resources")} />
-                  <NavItem icon={<TreePine  size={15} className="text-[#059669]" />} label="Nature"         badge={getObjectCount('cylinder').toString()}  active={activeTab === "Nature"}         onClick={() => setActiveTab("Nature")} />
-                  <NavItem icon={<Archive   size={15} className="text-[#DB2777]" />} label="Archives"       badge={history.length.toString()}              active={activeTab === "Archives"}       onClick={() => setActiveTab("Archives")} />
+                  <div className="mt-5 mb-2 px-3 text-[11px] font-display font-semibold text-slate-500 uppercase tracking-[0.18em]">World Domains</div>
+                  <NavItem icon={<Building2 size={15} className="text-violet-300" />} label="Infrastructure" badge={getObjectCount('box').toString()}      active={activeTab === "Infrastructure"} onClick={() => setActiveTab("Infrastructure")} />
+                  <NavItem icon={<Landmark  size={15} className="text-fuchsia-300" />} label="Monuments"      badge={getObjectCount('sphere').toString()}    active={activeTab === "Monuments"}      onClick={() => setActiveTab("Monuments")} />
+                  <NavItem icon={<Gem       size={15} className="text-amber-300" />} label="Materials"      badge={resources.toString()}                   active={activeTab === "Resources"}      onClick={() => setActiveTab("Resources")} />
+                  <NavItem icon={<TreePine  size={15} className="text-emerald-300" />} label="Nature"         badge={getObjectCount('cylinder').toString()}  active={activeTab === "Nature"}         onClick={() => setActiveTab("Nature")} />
+                  <NavItem icon={<Archive   size={15} className="text-rose-300" />} label="Archives"       badge={history.length.toString()}              active={activeTab === "Archives"}       onClick={() => setActiveTab("Archives")} />
                 </div>
 
                 {/* Resources gauge */}
                 <div className="mt-auto pt-4 shrink-0">
                   <div className="px-2 mb-4">
-                    <div className="flex justify-between text-[13px] text-[#6B7280] mb-2">
+                    <div className="flex justify-between text-[13px] text-slate-400 mb-2">
                       <span className="font-medium">Materials</span>
                       <span className="tabular-nums">{resources} / 1000</span>
                     </div>
                     <div className={`h-1.5 ${NEU_INSET_SM} rounded-full overflow-hidden`}>
                       <div
-                        className="h-full bg-gradient-to-r from-[#6C63FF] to-[#38B2AC] rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-[#22D3EE] to-[#8B5CF6] rounded-full transition-all duration-500 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
                         style={{ width: `${Math.min((resources / 1000) * 100, 100)}%` }}
                       />
                     </div>
@@ -496,24 +531,24 @@ function App() {
                             className={`w-8 h-8 rounded-full object-cover shrink-0 ${NEU_SM}`}
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="text-[15px] font-medium text-[#3D4852] truncate leading-tight">{user.displayName || 'Signed in'}</div>
-                            <div className="text-[13px] text-[#6B7280] truncate leading-tight">{user.email}</div>
+                            <div className="text-[15px] font-medium text-slate-100 truncate leading-tight">{user.displayName || 'Signed in'}</div>
+                            <div className="text-[13px] text-slate-500 truncate leading-tight">{user.email}</div>
                           </div>
                           <button
                             onClick={signOut}
                             title="Sign out"
-                            className={`p-1.5 rounded-lg text-[#6B7280] hover:text-[#3D4852] transition-all duration-200 ${NEU_SM} hover:${NEU_RAISED} active:${NEU_INSET_SM} shrink-0`}
+                            className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-50 transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM} shrink-0`}
                           >
                             <LogOut size={13} />
                           </button>
                         </>
                       ) : authLoading ? (
-                        <div className="text-[14px] text-[#6B7280]">Loading…</div>
+                        <div className="text-[14px] text-slate-400">Loading...</div>
                       ) : (
                         <div className="space-y-2 w-full">
                           <button
                             onClick={signInWithGoogle}
-                            className={`flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl bg-[#E0E5EC] text-[#3D4852] text-[14px] font-medium transition-all duration-200 ${NEU_SM} hover:${NEU_RAISED} active:${NEU_INSET_SM}`}
+                            className={`flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl text-slate-100 text-[14px] font-medium transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
                           >
                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -525,7 +560,7 @@ function App() {
                           </button>
                           <button
                             onClick={signInWithGitHub}
-                            className={`flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl bg-[#E0E5EC] text-[#3D4852] text-[14px] font-medium transition-all duration-200 ${NEU_SM} hover:${NEU_RAISED} active:${NEU_INSET_SM}`}
+                            className={`flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl text-slate-100 text-[14px] font-medium transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
                           >
                             <Github size={13} />
                             GitHub
@@ -540,8 +575,8 @@ function App() {
                           className={`w-8 h-8 rounded-full shrink-0 ${NEU_SM}`}
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="text-[15px] font-medium text-[#3D4852] truncate leading-tight">The Creator</div>
-                          <div className="text-[13px] text-[#6B7280] truncate leading-tight">Sign in to begin</div>
+                          <div className="text-[15px] font-medium text-slate-100 truncate leading-tight">The Creator</div>
+                          <div className="text-[13px] text-slate-500 truncate leading-tight">Sign in to begin</div>
                         </div>
                       </>
                     )}
@@ -550,7 +585,7 @@ function App() {
               </div>
             </Panel>
 
-            <Separator className="shrink-0 bg-[#E0E5EC] hover:bg-[#d4dae7] data-[resize-handle-state=drag]:bg-[#6C63FF]/20 transition-colors cursor-col-resize w-2" />
+            <Separator className="shrink-0 bg-transparent hover:bg-cyan-300/10 data-[resize-handle-state=drag]:bg-cyan-300/20 transition-colors cursor-col-resize w-2 rounded-full" />
 
             {/* Center: Thinking + World */}
             <Panel id="center" defaultSize={66} minSize={45} maxSize={80} className="min-w-0 flex flex-col overflow-hidden">
@@ -561,7 +596,7 @@ function App() {
                         <div className="h-full overflow-hidden mb-1">
                           {thinkingLogs.length === 0 ? (
                             <div
-                              className={`h-full flex items-center justify-center rounded-2xl bg-[#E0E5EC] relative overflow-hidden cursor-pointer ${NEU_RAISED}`}
+                              className={`h-full flex items-center justify-center rounded-2xl relative overflow-hidden cursor-pointer ${NEU_RAISED}`}
                               onClick={() => {
                                 if (!isRunning) {
                                   if (authReady && !user) { setSignInPrompt(true); return; }
@@ -574,23 +609,23 @@ function App() {
                                 <motion.div className="absolute w-64 h-64 rounded-full"
                                   animate={{ rotate: isRunning ? 360 : 0 }}
                                   transition={isRunning ? { duration: 28, repeat: Infinity, ease: "linear" } : { duration: 1.5 }}
-                                  style={{ boxShadow: '14px 14px 28px rgb(163,177,198,0.5),-14px -14px 28px rgba(255,255,255,0.58)', opacity: 0.55 }}>
-                                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-[#6C63FF]/25" />
+                                  style={{ boxShadow: '0 0 90px rgba(34,211,238,0.12), inset 0 0 0 1px rgba(255,255,255,0.08)', opacity: 0.75 }}>
+                                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-cyan-300/60" />
                                 </motion.div>
                                 <motion.div className="absolute w-48 h-48 rounded-full"
                                   animate={{ rotate: isRunning ? -360 : 0 }}
                                   transition={isRunning ? { duration: 20, repeat: Infinity, ease: "linear" } : { duration: 1.5 }}
-                                  style={{ boxShadow: 'inset 10px 10px 20px rgb(163,177,198,0.48),inset -10px -10px 20px rgba(255,255,255,0.55)', opacity: 0.6 }} />
+                                  style={{ boxShadow: 'inset 0 0 0 1px rgba(139,92,246,0.18), 0 0 70px rgba(139,92,246,0.10)', opacity: 0.7 }} />
                                 <motion.div className="absolute w-32 h-32 rounded-full"
                                   animate={{ rotate: isRunning ? 360 : 0 }}
                                   transition={isRunning ? { duration: 14, repeat: Infinity, ease: "linear" } : { duration: 1.5 }}
-                                  style={{ boxShadow: '8px 8px 16px rgb(163,177,198,0.5),-8px -8px 16px rgba(255,255,255,0.55)', opacity: 0.65 }}>
-                                  <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#38B2AC]/30" />
+                                  style={{ boxShadow: 'inset 0 0 0 1px rgba(34,211,238,0.2), 0 0 48px rgba(34,211,238,0.12)', opacity: 0.75 }}>
+                                  <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-violet-300/70" />
                                 </motion.div>
                                 <div className="absolute w-16 h-16 rounded-full"
-                                  style={{ boxShadow: 'inset 5px 5px 10px rgb(163,177,198,0.55),inset -5px -5px 10px rgba(255,255,255,0.55)', opacity: 0.75 }} />
+                                  style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1), 0 0 36px rgba(34,211,238,0.12)', opacity: 0.75 }} />
                                 <div className="absolute w-6 h-6 rounded-full"
-                                  style={{ boxShadow: '3px 3px 6px rgb(163,177,198,0.6),-3px -3px 6px rgba(255,255,255,0.6)', opacity: 0.9 }} />
+                                  style={{ boxShadow: '0 0 28px rgba(34,211,238,0.28)', opacity: 0.9 }} />
                               </div>
                               <ThinkingBar className="relative z-10 mx-8"
                                 text={isRunning ? 'Waiting for next agent...' : 'Simulation paused. Click to resume.'} />
@@ -609,14 +644,14 @@ function App() {
                         </div>
                       </Panel>
 
-                      <Separator className="shrink-0 bg-[#E0E5EC] hover:bg-[#d4dae7] data-[resize-handle-state=drag]:bg-[#6C63FF]/20 transition-colors cursor-row-resize h-2" />
+                      <Separator className="shrink-0 bg-transparent hover:bg-cyan-300/10 data-[resize-handle-state=drag]:bg-cyan-300/20 transition-colors cursor-row-resize h-2 rounded-full" />
 
                       {/* World 3D */}
                       <Panel id="world" defaultSize={72} minSize={45} maxSize={90} className="min-h-0 flex flex-col overflow-hidden">
-                        <div className={`h-full ${NEU_INSET_DEEP} rounded-2xl overflow-hidden flex flex-col mt-1 bg-[#E0E5EC]`}>
-                          <div className="px-4 py-3 flex justify-between items-center bg-black/25 backdrop-blur-sm shrink-0">
+                        <div className={`h-full ${NEU_INSET_DEEP} rounded-2xl overflow-hidden flex flex-col mt-1`}>
+                          <div className="px-4 py-3 flex justify-between items-center border-b border-white/10 bg-[#020617]/72 backdrop-blur-sm shrink-0">
                             <h2 className="font-display font-semibold text-white/90 text-[17px] tracking-wide flex items-center gap-2.5">
-                              <motion.span className="w-2.5 h-2.5 rounded-full bg-[#38B2AC] inline-block shrink-0"
+                              <motion.span className="w-2.5 h-2.5 rounded-full bg-[#22C55E] shadow-[0_0_18px_rgba(34,197,94,0.55)] inline-block shrink-0"
                                 animate={isRunning ? { scale: [1, 1.5, 1], opacity: [1, 0.4, 1] } : { scale: 1 }}
                                 transition={isRunning ? { duration: 1.4, repeat: Infinity } : {}} />
                               Live World Render
@@ -634,7 +669,7 @@ function App() {
                     </Group>
                   </Panel>
 
-            <Separator className="shrink-0 bg-[#E0E5EC] hover:bg-[#d4dae7] data-[resize-handle-state=drag]:bg-[#6C63FF]/20 transition-colors cursor-col-resize w-2" />
+            <Separator className="shrink-0 bg-transparent hover:bg-cyan-300/10 data-[resize-handle-state=drag]:bg-cyan-300/20 transition-colors cursor-col-resize w-2 rounded-full" />
 
             {/* Sidebar */}
             <Panel id="sidebar" defaultSize={22} minSize={15} maxSize={40} className="min-w-0 pl-2 flex flex-col overflow-hidden">
@@ -670,9 +705,9 @@ function App() {
 // ──────────────────────────────────────────────
 // Shadow shorthand constants (repeated from above for TabContent scope)
 // ──────────────────────────────────────────────
-const S_RAISED   = "shadow-[9px_9px_16px_rgb(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.55)]";
-const S_SM       = "shadow-[5px_5px_10px_rgb(163,177,198,0.55),-5px_-5px_10px_rgba(255,255,255,0.5)]";
-const S_INSET_SM = "shadow-[inset_3px_3px_6px_rgb(163,177,198,0.5),inset_-3px_-3px_6px_rgba(255,255,255,0.45)]";
+const S_RAISED   = "border border-white/10 bg-[#0F172A]/82 shadow-[0_22px_70px_rgba(0,0,0,0.36)] backdrop-blur-xl";
+const S_SM       = "border border-white/10 bg-white/[0.045] shadow-[0_12px_32px_rgba(0,0,0,0.26)]";
+const S_INSET_SM = "border border-white/10 bg-white/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]";
 
 type AgentDef = { name: string; role: string; color: string; bg: string; border: string; gradient: string };
 
@@ -695,16 +730,16 @@ function TabContent({
   sendingHuman
 }: {
   activeTab: string;
-  filteredHistory: any[];
+  filteredHistory: HistoryEntry[];
   searchQuery: string;
-  constitution: any[];
-  archive: any[];
-  images: any[];
-  objectsByType: (type: string) => any[];
-  historyByAgent: Record<string, any[]>;
+  constitution: ConstitutionEntry[];
+  archive: ArchiveEntry[];
+  images: ImageEntry[];
+  objectsByType: (type: string) => GenesisObject[];
+  historyByAgent: Record<string, HistoryEntry[]>;
   resources: number;
   AGENTS: AgentDef[];
-  feedEndRef: React.RefObject<HTMLDivElement | null>;
+  feedEndRef: RefObject<HTMLDivElement | null>;
   getObjectCount: (type: string) => number;
   humanMessage?: string;
   setHumanMessage?: (v: string) => void;
@@ -714,8 +749,8 @@ function TabContent({
   const getCount = getObjectCount;
 
   const renderHumanInput = () => (
-    <div className="shrink-0 pt-3 mt-2 border-t border-[#c5cdd9]/60">
-      <p className="text-[12px] text-[#6B7280] mb-2 font-medium">Message all agents</p>
+    <div className="shrink-0 pt-3 mt-2 border-t border-white/10">
+      <p className="text-[12px] text-slate-400 mb-2 font-medium">Message all agents</p>
       <div className="flex gap-2">
         <input
           type="text"
@@ -723,13 +758,13 @@ function TabContent({
           onChange={(e) => setHumanMessage?.(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendHumanMessage?.()}
           placeholder="Ask a question, give instructions..."
-          className={`flex-1 px-3 py-2.5 rounded-xl text-[14px] bg-[#E0E5EC] ${S_INSET_SM} placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#6C63FF]/40`}
+          className={`flex-1 px-3 py-2.5 rounded-xl text-[14px] text-slate-100 ${S_INSET_SM} placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-300/35`}
           disabled={sendingHuman}
         />
         <button
           onClick={() => sendHumanMessage?.()}
           disabled={!humanMessage?.trim() || sendingHuman}
-          className={`px-4 py-2.5 rounded-xl flex items-center gap-1.5 text-[14px] font-medium transition-all ${(humanMessage?.trim() && !sendingHuman) ? 'bg-[#6C63FF] text-white shadow-[5px_5px_10px_rgb(163,177,198,0.55),-5px_-5px_10px_rgba(255,255,255,0.5)] hover:opacity-90' : 'bg-[#E0E5EC] text-[#9CA3AF] cursor-not-allowed'}`}
+          className={`px-4 py-2.5 rounded-xl flex items-center gap-1.5 text-[14px] font-medium transition-all ${(humanMessage?.trim() && !sendingHuman) ? 'bg-gradient-to-r from-[#22D3EE] to-[#8B5CF6] text-white shadow-[0_14px_32px_rgba(34,211,238,0.18)] hover:opacity-95 cursor-pointer' : 'border border-white/10 bg-white/[0.03] text-slate-600 cursor-not-allowed'}`}
         >
           <Send size={14} />
           Send
@@ -742,12 +777,12 @@ function TabContent({
     <>
       <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-0">
         {filteredHistory.length === 0 ? (
-          <div className="text-[15px] text-[#6B7280] text-center mt-6 italic">
+          <div className="text-[15px] text-slate-500 text-center mt-6 italic">
             {searchQuery ? 'No matches found.' : 'No activity yet.'}
           </div>
         ) : (
           <AnimatePresence initial={false}>
-            {[...filteredHistory].reverse().map((entry: any, i: number) => {
+            {[...filteredHistory].reverse().map((entry, i) => {
               const isHuman = entry.agentName === 'Human';
               const agent = isHuman ? null : AGENTS.find((a: AgentDef) => a.name === entry.agentName) || AGENTS[0];
               return (
@@ -755,24 +790,24 @@ function TabContent({
                   key={`${entry.timestamp}-${i}`}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex gap-3 items-start p-3 rounded-xl bg-[#E0E5EC] ${S_INSET_SM} transition-shadow duration-200 ${isHuman ? 'ring-1 ring-[#6C63FF]/30' : ''}`}
+                  className={`flex gap-3 items-start p-3 rounded-xl ${S_INSET_SM} transition-shadow duration-200 ${isHuman ? 'ring-1 ring-cyan-300/30' : ''}`}
                 >
                   {isHuman ? (
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#6C63FF] to-[#38B2AC] shadow-[inset_2px_2px_4px_rgba(0,0,0,0.15),inset_-2px_-2px_4px_rgba(255,255,255,0.2)]">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#22D3EE] to-[#8B5CF6] shadow-[0_10px_24px_rgba(34,211,238,0.18),inset_0_1px_0_rgba(255,255,255,0.2)]">
                       <User size={12} className="text-white" />
                     </div>
                   ) : (
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br ${agent!.gradient} shadow-[inset_2px_2px_4px_rgba(0,0,0,0.15),inset_-2px_-2px_4px_rgba(255,255,255,0.2)]`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br ${agent!.gradient} shadow-[0_10px_24px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.2)]`}>
                       <span className="text-white text-[12px] font-display font-bold">{agent!.name[0]}</span>
                     </div>
                   )}
                   <div className="flex-1 min-w-0 pt-0.5">
                     <p className="text-[14px] leading-snug">
-                      <span className="font-display font-semibold text-[#3D4852]">{entry.agentName}</span>{' '}
-                      <span className="text-[#6B7280]">{isHuman ? 'intervened' : 'stated'}</span>
+                      <span className="font-display font-semibold text-slate-100">{entry.agentName}</span>{' '}
+                      <span className="text-slate-500">{isHuman ? 'intervened' : 'stated'}</span>
                     </p>
-                    <p className="text-[14px] text-[#3D4852] mt-0.5 break-words leading-relaxed">"{entry.message}"</p>
-                    <span className="text-[12px] text-[#6B7280] tabular-nums mt-1 block">
+                    <p className="text-[14px] text-slate-300 mt-0.5 break-words leading-relaxed">"{entry.message}"</p>
+                    <span className="text-[12px] text-slate-500 tabular-nums mt-1 block">
                       {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -790,19 +825,19 @@ function TabContent({
   const renderConstitution = () => (
     <div className="space-y-2.5 overflow-y-auto pr-1 max-h-[400px]">
       {constitution.length === 0 ? (
-        <div className="text-[14px] text-[#6B7280] text-center italic mt-4">No laws established yet.</div>
+        <div className="text-[14px] text-slate-500 text-center italic mt-4">No laws established yet.</div>
       ) : (
         constitution.map((c, i) => {
           const agent = AGENTS.find((a: AgentDef) => a.name === c.agentName) || AGENTS[0];
           return (
-            <div key={c.id} className={`bg-[#E0E5EC] rounded-xl p-3.5 ${S_INSET_SM}`}>
+            <div key={c.id} className={`rounded-xl p-3.5 ${S_INSET_SM}`}>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-[12px] font-display font-bold text-[#3D4852] uppercase tracking-wider">
+                <span className="text-[12px] font-display font-bold text-slate-100 uppercase tracking-wider">
                   Article {i + 1}
                 </span>
                 <span className={`text-[12px] font-semibold ${agent.color}`}>by {c.agentName}</span>
               </div>
-              <p className="text-[14px] text-[#6B7280] leading-relaxed">"{c.law}"</p>
+              <p className="text-[14px] text-slate-400 leading-relaxed">"{c.law}"</p>
             </div>
           );
         })
@@ -815,13 +850,13 @@ function TabContent({
     return (
       <div className="space-y-2 overflow-y-auto pr-1 max-h-[400px]">
         {items.length === 0 ? (
-          <div className="text-[14px] text-[#6B7280] text-center italic mt-4">No {label.toLowerCase()} yet.</div>
+          <div className="text-[14px] text-slate-500 text-center italic mt-4">No {label.toLowerCase()} yet.</div>
         ) : (
-          items.map((obj: any) => (
-            <div key={obj.id} className={`bg-[#E0E5EC] rounded-xl p-3 ${S_INSET_SM} text-[14px]`}>
-              <span className="text-[#6C63FF] font-display font-semibold">{obj.type}</span>
-              {obj.creator && <span className="text-[#6B7280] ml-2">by {obj.creator}</span>}
-              {obj.position && <span className="text-[#3D4852] block mt-1 tabular-nums text-[13px]">[{obj.position.join(', ')}]</span>}
+          items.map((obj) => (
+            <div key={obj.id} className={`rounded-xl p-3 ${S_INSET_SM} text-[14px]`}>
+              <span className="text-cyan-300 font-display font-semibold">{obj.type}</span>
+              {obj.creator && <span className="text-slate-500 ml-2">by {obj.creator}</span>}
+              {obj.position && <span className="text-slate-300 block mt-1 tabular-nums text-[13px]">[{obj.position.join(', ')}]</span>}
             </div>
           ))
         )}
@@ -829,8 +864,8 @@ function TabContent({
     );
   };
 
-  const panelClass = `bg-[#E0E5EC] rounded-2xl p-5 flex-1 flex flex-col min-h-0 ${S_RAISED}`;
-  const headingClass = "font-display font-bold text-[#3D4852] text-[15px] mb-4 flex items-center gap-2";
+  const panelClass = `rounded-2xl p-5 flex-1 flex flex-col min-h-0 ${S_RAISED}`;
+  const headingClass = "font-display font-bold text-slate-50 text-[15px] mb-4 flex items-center gap-2";
 
   const content = (() => {
     switch (activeTab) {
@@ -838,7 +873,7 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#6C63FF] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.5)] inline-block" />
               Recent Activity
             </h3>
             {renderActivityFeed()}
@@ -849,9 +884,9 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#6C63FF] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.5)] inline-block" />
               Constitution Ledger
-              <span className={`ml-auto text-[13px] font-normal text-[#6B7280] tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>
+              <span className={`ml-auto text-[13px] font-normal text-slate-400 tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>
                 {constitution.length} Articles
               </span>
             </h3>
@@ -862,7 +897,7 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#38B2AC] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.45)] inline-block" />
               Timeline
             </h3>
             {renderActivityFeed()}
@@ -872,24 +907,24 @@ function TabContent({
         return (
           <div className={`${panelClass} overflow-y-auto`}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#9333EA] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-violet-300 shadow-[0_0_14px_rgba(196,181,253,0.45)] inline-block" />
               Activity by Faction
             </h3>
             <div className="space-y-3">
               {AGENTS.map((agent: AgentDef) => {
                 const entries = historyByAgent[agent.name] || [];
                 return (
-                  <div key={agent.name} className={`rounded-xl p-3.5 bg-[#E0E5EC] ${S_INSET_SM}`}>
+                  <div key={agent.name} className={`rounded-xl p-3.5 ${S_INSET_SM}`}>
                     <div className="flex items-center gap-2 mb-2.5">
                       <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${agent.gradient} flex items-center justify-center shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12)]`}>
                         <span className="text-white text-[12px] font-display font-bold">{agent.name[0]}</span>
                       </div>
-                      <span className="font-display font-semibold text-[#3D4852] text-[15px]">{agent.name}</span>
+                      <span className="font-display font-semibold text-slate-100 text-[15px]">{agent.name}</span>
                       <span className={`ml-auto text-[12px] tabular-nums ${agent.color} font-medium`}>{entries.length}</span>
                     </div>
                     <div className="space-y-1.5 max-h-[100px] overflow-y-auto">
-                      {entries.slice(-4).reverse().map((e: any, i: number) => (
-                        <p key={i} className="text-[13px] text-[#6B7280] break-words leading-relaxed">"{e.message}"</p>
+                      {entries.slice(-4).reverse().map((e, i) => (
+                        <p key={i} className="text-[13px] text-slate-400 break-words leading-relaxed">"{e.message}"</p>
                       ))}
                     </div>
                   </div>
@@ -902,11 +937,11 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#6B7280] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-slate-500 inline-block" />
               The Void
             </h3>
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-[15px] text-[#6B7280] italic text-center">Nothing has been discarded to the void.</p>
+              <p className="text-[15px] text-slate-500 italic text-center">Nothing has been discarded to the void.</p>
             </div>
           </div>
         );
@@ -914,9 +949,9 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#4F46E5] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-violet-300 shadow-[0_0_14px_rgba(196,181,253,0.45)] inline-block" />
               Infrastructure
-              <span className={`ml-auto text-[13px] font-normal text-[#6B7280] tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('box')} constructs</span>
+              <span className={`ml-auto text-[13px] font-normal text-slate-400 tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('box')} constructs</span>
             </h3>
             {renderObjectList('box', 'Infrastructure')}
           </div>
@@ -925,9 +960,9 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#9333EA] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-fuchsia-300 shadow-[0_0_14px_rgba(240,171,252,0.45)] inline-block" />
               Monuments
-              <span className={`ml-auto text-[13px] font-normal text-[#6B7280] tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('sphere')} constructs</span>
+              <span className={`ml-auto text-[13px] font-normal text-slate-400 tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('sphere')} constructs</span>
             </h3>
             {renderObjectList('sphere', 'Monuments')}
           </div>
@@ -936,9 +971,9 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#059669] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.45)] inline-block" />
               Nature
-              <span className={`ml-auto text-[13px] font-normal text-[#6B7280] tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('cylinder')} constructs</span>
+              <span className={`ml-auto text-[13px] font-normal text-slate-400 tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('cylinder')} constructs</span>
             </h3>
             {renderObjectList('cylinder', 'Nature')}
           </div>
@@ -947,23 +982,23 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#D97706] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.45)] inline-block" />
               Materials
             </h3>
             <div className="space-y-4">
-              <div className={`rounded-xl p-4 bg-[#E0E5EC] ${S_INSET_SM}`}>
+              <div className={`rounded-xl p-4 ${S_INSET_SM}`}>
                 <div className="flex justify-between text-[15px] mb-3">
-                  <span className="text-[#6B7280] font-medium">Available</span>
-                  <span className="font-display font-semibold text-[#3D4852] tabular-nums">{resources} / 1000</span>
+                  <span className="text-slate-400 font-medium">Available</span>
+                  <span className="font-display font-semibold text-slate-100 tabular-nums">{resources} / 1000</span>
                 </div>
                 <div className={`h-2 rounded-full overflow-hidden ${S_INSET_SM}`}>
                   <div
-                    className="h-full bg-gradient-to-r from-[#6C63FF] to-[#38B2AC] rounded-full transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-[#22D3EE] to-[#8B5CF6] rounded-full transition-all duration-500 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
                     style={{ width: `${(resources / 1000) * 100}%` }}
                   />
                 </div>
               </div>
-              <p className="text-[14px] text-[#6B7280]">1 material consumed per construct built.</p>
+              <p className="text-[14px] text-slate-400">1 material consumed per construct built.</p>
             </div>
           </div>
         );
@@ -971,18 +1006,18 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#DB2777] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-rose-300 shadow-[0_0_14px_rgba(253,164,175,0.45)] inline-block" />
               Shared Archive
-              <span className={`ml-auto text-[13px] font-normal text-[#6B7280] tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{archive.length} entries</span>
+              <span className={`ml-auto text-[13px] font-normal text-slate-400 tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{archive.length} entries</span>
             </h3>
             <div className="space-y-1.5 overflow-y-auto pr-1 max-h-[300px]">
               {archive.length === 0 ? (
-                <div className="text-[14px] text-[#6B7280] italic">No archive entries yet.</div>
+                <div className="text-[14px] text-slate-500 italic">No archive entries yet.</div>
               ) : (
-                archive.slice().reverse().map((a: any) => (
-                  <div key={a.id} className={`bg-[#E0E5EC] rounded-xl px-3 py-2 ${S_INSET_SM} text-[13px]`}>
-                    <span className="text-[#6C63FF] font-display font-semibold">{a.key}:</span>{' '}
-                    <span className="text-[#6B7280] break-words">{a.value}</span>
+                archive.slice().reverse().map((a) => (
+                  <div key={a.id} className={`rounded-xl px-3 py-2 ${S_INSET_SM} text-[13px]`}>
+                    <span className="text-cyan-300 font-display font-semibold">{a.key}:</span>{' '}
+                    <span className="text-slate-400 break-words">{a.value}</span>
                   </div>
                 ))
               )}
@@ -990,15 +1025,15 @@ function TabContent({
             {images.length > 0 && (
               <>
                 <h3 className={`${headingClass} mt-5`}>
-                  <span className="w-2 h-2 rounded-full bg-[#D97706] inline-block" />
+                  <span className="w-2 h-2 rounded-full bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.45)] inline-block" />
                   Visual Artifacts
-                  <span className="text-[#6B7280] text-[13px] font-normal">({images.length})</span>
+                  <span className="text-slate-400 text-[13px] font-normal">({images.length})</span>
                 </h3>
                 <div className="grid grid-cols-2 gap-2.5">
-                  {images.slice(-4).reverse().map((img: any) => (
-                    <div key={img.id} className={`rounded-xl overflow-hidden bg-[#E0E5EC] ${S_SM}`}>
+                  {images.slice(-4).reverse().map((img) => (
+                    <div key={img.id} className={`rounded-xl overflow-hidden ${S_SM}`}>
                       <img src={`data:image/png;base64,${img.imageBase64}`} alt={img.prompt} className="w-full h-16 object-cover" />
-                      <p className="text-[12px] text-[#6B7280] px-2 py-1 break-words leading-tight" title={img.prompt}>{img.prompt}</p>
+                      <p className="text-[12px] text-slate-400 px-2 py-1 break-words leading-tight" title={img.prompt}>{img.prompt}</p>
                     </div>
                   ))}
                 </div>
@@ -1010,7 +1045,7 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-[#6C63FF] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.5)] inline-block" />
               Recent Activity
             </h3>
             {renderActivityFeed()}
@@ -1025,7 +1060,7 @@ function TabContent({
 function NavItem({
   icon, label, active, badge, onClick
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   active?: boolean;
   badge?: string;
@@ -1034,10 +1069,10 @@ function NavItem({
   return (
     <div
       onClick={onClick}
-      className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 select-none
+      className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 select-none focus-within:ring-2 focus-within:ring-cyan-300/30
         ${active
-          ? `bg-[#E0E5EC] shadow-[inset_3px_3px_6px_rgb(163,177,198,0.6),inset_-3px_-3px_6px_rgba(255,255,255,0.5)] text-[#6C63FF] font-semibold`
-          : `text-[#6B7280] hover:text-[#3D4852] hover:shadow-[3px_3px_6px_rgb(163,177,198,0.4),-3px_-3px_6px_rgba(255,255,255,0.4)]`
+          ? `border border-cyan-300/25 bg-cyan-300/10 text-cyan-100 font-semibold shadow-[0_0_22px_rgba(34,211,238,0.08)]`
+          : `text-slate-400 hover:text-slate-100 hover:bg-white/[0.04]`
         }`}
     >
       <div className="flex items-center gap-2.5">
@@ -1046,8 +1081,7 @@ function NavItem({
       </div>
       {badge && (
         <span className={`text-[12px] tabular-nums font-medium px-1.5 py-0.5 rounded-lg min-w-[20px] text-center
-          ${active ? 'text-[#6C63FF]' : 'text-[#6B7280]'}
-          shadow-[inset_2px_2px_4px_rgb(163,177,198,0.4),inset_-2px_-2px_4px_rgba(255,255,255,0.4)]`}>
+          ${active ? 'text-cyan-100 bg-cyan-300/15 border border-cyan-300/20' : 'text-slate-500 bg-white/[0.04] border border-white/10'}`}>
           {badge}
         </span>
       )}

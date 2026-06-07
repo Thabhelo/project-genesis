@@ -14,7 +14,7 @@ interface AIThinkingProps {
 function SpinnerIcon() {
   return (
     <svg
-      className="animate-spin h-4 w-4 text-[#6C63FF]"
+      className="animate-spin h-4 w-4 text-cyan-300"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -69,7 +69,7 @@ export default function AIThinking({
       className={`glass-panel rounded-2xl overflow-hidden flex flex-col h-full min-h-[120px] ${className}`}
     >
       {/* Header */}
-      <div className="px-4 py-3 border-b border-white/30 flex items-center gap-3 shrink-0">
+      <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 shrink-0">
         {spinner && (
           <div className="shrink-0 animate-pulse-ring rounded-full p-1">
             <SpinnerIcon />
@@ -79,7 +79,7 @@ export default function AIThinking({
           <span
             className="font-display text-[16px] font-semibold"
             style={{
-              background: "linear-gradient(110deg, #6B7280 25%, #6C63FF 50%, #38B2AC 65%, #6B7280 80%)",
+              background: "linear-gradient(110deg, #94A3B8 25%, #22D3EE 50%, #8B5CF6 65%, #94A3B8 80%)",
               backgroundSize: "250% 100%",
               animation: "shimmer 4s linear infinite",
               WebkitBackgroundClip: "text",
@@ -90,7 +90,7 @@ export default function AIThinking({
             {headerLabel}
           </span>
         </div>
-        <span className="text-[#6B7280] text-[13px] tabular-nums shrink-0">
+        <span className="text-slate-500 text-[13px] tabular-nums shrink-0">
           {timer}s
         </span>
       </div>
@@ -102,12 +102,12 @@ export default function AIThinking({
           className="absolute top-0 left-0 right-0 pointer-events-none z-10"
           style={{
             height: "48px",
-            background: "linear-gradient(to bottom, rgba(255,255,255,0.5), transparent)",
+            background: "linear-gradient(to bottom, rgba(2,6,23,0.82), transparent)",
           }}
         />
         <div
           ref={contentRef}
-          className="absolute inset-0 overflow-y-auto p-4 pt-6 text-[15px] text-[#6B7280] leading-relaxed whitespace-pre-wrap"
+          className="absolute inset-0 overflow-y-auto p-4 pt-6 text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap"
         >
           {message}
         </div>
@@ -116,7 +116,7 @@ export default function AIThinking({
           className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
           style={{
             height: "36px",
-            background: "linear-gradient(to top, rgba(255,255,255,0.5), transparent)",
+            background: "linear-gradient(to top, rgba(2,6,23,0.82), transparent)",
           }}
         />
       </div>

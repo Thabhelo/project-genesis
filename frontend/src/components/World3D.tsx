@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sky, Stars, ContactShadows } from '@react-three/drei';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import type { Mesh } from 'three';
 
 interface WorldObject {
   id: string;
@@ -18,7 +19,7 @@ interface WorldProps {
 }
 
 function AnimatedMesh({ obj }: { obj: WorldObject }) {
-  const meshRef = useRef<any>(null);
+  const meshRef = useRef<Mesh>(null);
   const isPlanet = obj.creator === 'World' || obj.id === 'planet-0';
 
   useGSAP(() => {
@@ -52,24 +53,24 @@ export function World3D({ objects }: WorldProps) {
       camera={{ position: [15, 15, 15], fov: 45 }} 
       shadows
     >
-      <color attach="background" args={['#050505']} />
-      <Sky sunPosition={[100, 20, 100]} turbidity={0.1} rayleigh={0.5} />
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+      <color attach="background" args={['#020617']} />
+      <Sky sunPosition={[100, 20, 100]} turbidity={0.08} rayleigh={0.35} />
+      <Stars radius={100} depth={50} count={4200} factor={3.5} saturation={0.15} fade speed={0.65} />
       
-      <ambientLight intensity={0.2} />
+      <ambientLight intensity={0.28} />
       <directionalLight 
         position={[10, 20, 10]} 
-        intensity={1.5} 
+        intensity={1.65} 
         castShadow 
         shadow-mapSize={[2048, 2048]}
       />
       
-      {/* Ground Plane with cool grid */}
+      {/* Ground plane tuned to the dashboard palette */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#0a0a0a" roughness={0.8} />
+        <meshStandardMaterial color="#020617" roughness={0.78} metalness={0.12} />
       </mesh>
-      <gridHelper args={[100, 100, '#222222', '#111111']} position={[0, 0, 0]} />
+      <gridHelper args={[100, 100, '#164E63', '#0F172A']} position={[0, 0, 0]} />
 
       <ContactShadows position={[0, 0, 0]} opacity={0.4} scale={50} blur={2} far={10} />
 
