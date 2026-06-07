@@ -53,7 +53,7 @@ export function World3D({ objects }: WorldProps) {
       camera={{ position: [15, 15, 15], fov: 45 }} 
       shadows
     >
-      <color attach="background" args={['#020617']} />
+      <color attach="background" args={['#181611']} />
       <Sky sunPosition={[100, 20, 100]} turbidity={0.08} rayleigh={0.35} />
       <Stars radius={100} depth={50} count={4200} factor={3.5} saturation={0.15} fade speed={0.65} />
       
@@ -68,9 +68,9 @@ export function World3D({ objects }: WorldProps) {
       {/* Ground plane tuned to the dashboard palette */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#020617" roughness={0.78} metalness={0.12} />
+        <meshStandardMaterial color="#181611" roughness={0.82} metalness={0.08} />
       </mesh>
-      <gridHelper args={[100, 100, '#164E63', '#0F172A']} position={[0, 0, 0]} />
+      <gridHelper args={[100, 100, '#5F6F46', '#2E2A20']} position={[0, 0, 0]} />
 
       <ContactShadows position={[0, 0, 0]} opacity={0.4} scale={50} blur={2} far={10} />
 

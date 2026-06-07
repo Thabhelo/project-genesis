@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #020617;
-  --color-surface: #0F172A;
-  --color-border: rgba(255, 255, 255, 0.1);
-  --color-text-main: #F8FAFC;
-  --color-text-muted: #94A3B8;
-  --color-accent: #22D3EE;
-  --color-accent-light: #67E8F9;
-  --color-accent-teal: #8B5CF6;
+  --color-background: #F4EFE6;
+  --color-surface: #FFFDF6;
+  --color-border: #D8CBB7;
+  --color-text-main: #1F241F;
+  --color-text-muted: #6B6258;
+  --color-accent: #9A5B2F;
+  --color-accent-light: #C0843D;
+  --color-accent-teal: #4F6F46;
 }
 
 html, body, #root {
@@ -16,8 +16,8 @@ html, body, #root {
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: #020617;
-  color: #F8FAFC;
+  background-color: #F4EFE6;
+  color: #1F241F;
   font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -36,17 +36,17 @@ html, body, #root {
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: #F4EFE6;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #22D3EE, #8B5CF6);
+  background: linear-gradient(135deg, #9A5B2F, #4F6F46);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #67E8F9, #A78BFA);
+  background: linear-gradient(135deg, #B56F39, #5F7F53);
 }
 
 /* ──────────────────────────────────────────────
@@ -59,11 +59,11 @@ html, body, #root {
 }
 
 [data-panel-resize-handle-id]:hover {
-  background: rgba(34, 211, 238, 0.1);
+  background: rgba(154, 91, 47, 0.12);
 }
 
 [data-panel-resize-handle-id][data-resize-handle-state="drag"] {
-  background: linear-gradient(to bottom, rgba(34, 211, 238, 0.12), rgba(34, 211, 238, 0.28), rgba(34, 211, 238, 0.12));
+  background: linear-gradient(to bottom, rgba(154, 91, 47, 0.1), rgba(154, 91, 47, 0.32), rgba(154, 91, 47, 0.1));
 }
 
 /* ──────────────────────────────────────────────
@@ -71,26 +71,26 @@ html, body, #root {
 ────────────────────────────────────────────── */
 .glass-panel {
   background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.88));
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(18px) saturate(1.25);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    linear-gradient(180deg, rgba(255, 253, 246, 0.92), rgba(244, 239, 230, 0.88));
+  border: 1px solid rgba(139, 119, 92, 0.28);
+  backdrop-filter: blur(16px) saturate(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 22px 58px rgba(61, 48, 31, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 /* Deeper glass for the modal */
 .glass-modal {
   background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.94));
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(24px) saturate(1.35);
-  -webkit-backdrop-filter: blur(24px) saturate(1.35);
+    linear-gradient(180deg, rgba(255, 253, 246, 0.98), rgba(244, 239, 230, 0.96));
+  border: 1px solid rgba(139, 119, 92, 0.32);
+  backdrop-filter: blur(22px) saturate(1.1);
+  -webkit-backdrop-filter: blur(22px) saturate(1.1);
   box-shadow:
-    0 30px 110px rgba(0, 0, 0, 0.56),
-    0 0 70px rgba(34, 211, 238, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 30px 90px rgba(61, 48, 31, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
 /* ──────────────────────────────────────────────
@@ -107,9 +107,9 @@ html, body, #root {
 }
 
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.28); }
-  70%  { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(154, 91, 47, 0.24); }
+  70%  { box-shadow: 0 0 0 8px rgba(154, 91, 47, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(154, 91, 47, 0); }
 }
 
 .animate-float {

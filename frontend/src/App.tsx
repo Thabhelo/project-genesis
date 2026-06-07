@@ -54,25 +54,25 @@ type ImageEntry = {
   prompt: string;
 };
 
-// Agent accents tuned for a dark production dashboard.
+// Agent accents inspired by civic ledgers, maps, and operations tools.
 const AGENTS = [
-  { name: "Alpha",   role: "The Architect",   color: "text-[#8B5CF6]", bg: "bg-[#8B5CF6]/10", border: "border-[#8B5CF6]/25", gradient: "from-[#8B5CF6] to-[#38BDF8]" },
-  { name: "Beta",    role: "The Diplomat",    color: "text-[#22D3EE]", bg: "bg-[#22D3EE]/10", border: "border-[#22D3EE]/25", gradient: "from-[#22D3EE] to-[#2DD4BF]" },
-  { name: "Gamma",   role: "The Critique",    color: "text-[#F472B6]", bg: "bg-[#F472B6]/10", border: "border-[#F472B6]/25", gradient: "from-[#F472B6] to-[#FB7185]" },
-  { name: "Delta",   role: "The Merchant",    color: "text-[#F59E0B]", bg: "bg-[#F59E0B]/10", border: "border-[#F59E0B]/25", gradient: "from-[#F59E0B] to-[#F97316]" },
-  { name: "Epsilon", role: "The Philosopher", color: "text-[#22C55E]", bg: "bg-[#22C55E]/10", border: "border-[#22C55E]/25", gradient: "from-[#22C55E] to-[#84CC16]" },
+  { name: "Alpha",   role: "The Architect",   color: "text-[#7A4E2D]", bg: "bg-[#7A4E2D]/10", border: "border-[#7A4E2D]/25", gradient: "from-[#7A4E2D] to-[#B56F39]" },
+  { name: "Beta",    role: "The Diplomat",    color: "text-[#4F6F46]", bg: "bg-[#4F6F46]/10", border: "border-[#4F6F46]/25", gradient: "from-[#4F6F46] to-[#7A8F55]" },
+  { name: "Gamma",   role: "The Critique",    color: "text-[#8A4B3B]", bg: "bg-[#8A4B3B]/10", border: "border-[#8A4B3B]/25", gradient: "from-[#8A4B3B] to-[#C06F4E]" },
+  { name: "Delta",   role: "The Merchant",    color: "text-[#A36A21]", bg: "bg-[#A36A21]/10", border: "border-[#A36A21]/25", gradient: "from-[#A36A21] to-[#D49A36]" },
+  { name: "Epsilon", role: "The Philosopher", color: "text-[#5F5366]", bg: "bg-[#5F5366]/10", border: "border-[#5F5366]/25", gradient: "from-[#5F5366] to-[#8E7B72]" },
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // ──────────────────────────────────────────────────────────
-// Production surface tokens for the dark glass dashboard system
+// Production surface tokens for the warm operations-ledger system
 // ──────────────────────────────────────────────────────────
-const NEU_RAISED     = "border border-white/10 bg-[#0F172A]/82 shadow-[0_22px_70px_rgba(0,0,0,0.36)] backdrop-blur-xl";
-const NEU_SM         = "border border-white/10 bg-white/[0.045] shadow-[0_12px_32px_rgba(0,0,0,0.26)]";
-const NEU_INSET      = "border border-white/10 bg-[#020617]/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]";
-const NEU_INSET_DEEP = "border border-white/10 bg-[#020617]/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_80px_rgba(0,0,0,0.42)]";
-const NEU_INSET_SM   = "border border-white/10 bg-white/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]";
+const NEU_RAISED     = "border border-[#D8CBB7] bg-[#FFFDF6]/88 shadow-[0_18px_52px_rgba(61,48,31,0.13)] backdrop-blur-xl";
+const NEU_SM         = "border border-[#D8CBB7] bg-[#FFFDF6]/78 shadow-[0_10px_26px_rgba(61,48,31,0.1)]";
+const NEU_INSET      = "border border-[#D8CBB7] bg-[#F2EBDD]/84 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
+const NEU_INSET_DEEP = "border border-[#3E352B] bg-[#181611] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_24px_70px_rgba(61,48,31,0.22)]";
+const NEU_INSET_SM   = "border border-[#D8CBB7] bg-[#F8F2E8]/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]";
 
 function App() {
   const { user, loading: authLoading, authReady, signInWithGoogle, signInWithGitHub, signOut, getIdToken } = useAuth();
@@ -243,7 +243,7 @@ function App() {
   const objectsByType = (type: string) => objects.filter(o => o.type === type);
 
   return (
-    <div className="flex h-screen w-screen bg-[#020617] text-slate-100 overflow-hidden text-[16px] selection:bg-cyan-300/20 selection:text-cyan-100">
+    <div className="flex h-screen w-screen bg-[#F4EFE6] text-[#1F241F] overflow-hidden text-[16px] selection:bg-[#D49A36]/25 selection:text-[#1F241F]">
 
       {/* ── Sign-in modal ── */}
       <AnimatePresence>
@@ -252,7 +252,7 @@ function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#020617]/82 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#2B251C]/45 backdrop-blur-md"
             onClick={() => setSignInPrompt(false)}
           >
             <motion.div
@@ -264,21 +264,21 @@ function App() {
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 mb-5">
-                <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br from-[#22D3EE] to-[#8B5CF6] flex items-center justify-center ${NEU_SM}`}>
+                <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br from-[#9A5B2F] to-[#4F6F46] flex items-center justify-center ${NEU_SM}`}>
                   <Sparkles size={16} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-slate-50 text-[18px] leading-tight">Sign in required</h3>
-                  <p className="text-slate-400 text-[14px]">To run the simulation</p>
+                  <h3 className="font-display font-bold text-[#1F241F] text-[18px] leading-tight">Sign in required</h3>
+                  <p className="text-[#6B6258] text-[14px]">To run the simulation</p>
                 </div>
               </div>
-              <p className="text-slate-300 text-[15px] mb-6 leading-relaxed">
+              <p className="text-[#4D463E] text-[15px] mb-6 leading-relaxed">
                 Sign in with Google or GitHub before starting. This ensures accountability and prevents unattended runs.
               </p>
               <div className="flex flex-col gap-2.5">
                 <button
                   onClick={signInWithGoogle}
-                  className={`flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-slate-100 text-[15px] font-medium transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
+                  className={`flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-[#1F241F] text-[15px] font-medium transition-all duration-200 cursor-pointer hover:border-[#9A5B2F]/45 ${NEU_SM}`}
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -290,7 +290,7 @@ function App() {
                 </button>
                 <button
                   onClick={signInWithGitHub}
-                  className={`flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-slate-100 text-[15px] font-medium transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
+                  className={`flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-[#1F241F] text-[15px] font-medium transition-all duration-200 cursor-pointer hover:border-[#9A5B2F]/45 ${NEU_SM}`}
                 >
                   <Github size={15} />
                   Continue with GitHub
@@ -298,7 +298,7 @@ function App() {
               </div>
               <button
                 onClick={() => setSignInPrompt(false)}
-                className="w-full mt-4 py-2 text-[14px] text-slate-400 hover:text-slate-100 transition-colors rounded-xl cursor-pointer"
+                className="w-full mt-4 py-2 text-[14px] text-[#6B6258] hover:text-[#1F241F] transition-colors rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
@@ -308,20 +308,20 @@ function App() {
       </AnimatePresence>
 
       {/* ── Main layout ── */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(139,92,246,0.15),transparent_34%),#020617] overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 bg-[radial-gradient(circle_at_top_left,rgba(154,91,47,0.18),transparent_30%),radial-gradient(circle_at_top_right,rgba(79,111,70,0.16),transparent_32%),linear-gradient(180deg,#F8F2E8_0%,#EFE6D8_100%)] overflow-hidden">
 
         {/* Header */}
-        <header className="h-16 flex items-center justify-between px-5 shrink-0 border-b border-white/10 bg-[#020617]/76 backdrop-blur-xl z-10">
+        <header className="h-16 flex items-center justify-between px-5 shrink-0 border-b border-[#D8CBB7] bg-[#FFFDF6]/82 backdrop-blur-xl z-10">
           <div className="flex items-center gap-3">
             <button
               onClick={() => apiCall('reset')}
               title="Reset World"
-              className={`p-2 rounded-xl text-slate-400 hover:text-slate-50 transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
+              className={`p-2 rounded-xl text-[#6B6258] hover:text-[#1F241F] transition-all duration-200 cursor-pointer hover:border-[#9A5B2F]/45 ${NEU_SM}`}
             >
               <RotateCcw size={15} />
             </button>
-            <div className="flex items-center gap-2 text-[15px] text-slate-100 font-medium">
-              <Globe2 size={14} className="text-cyan-300" />
+            <div className="flex items-center gap-2 text-[15px] text-[#1F241F] font-medium">
+              <Globe2 size={14} className="text-[#4F6F46]" />
               <span className="font-display">World State</span>
             </div>
           </div>
@@ -331,7 +331,7 @@ function App() {
             <button
               onClick={() => apiCall('save')}
               title="Save Checkpoint"
-              className={`p-2 rounded-xl text-slate-400 hover:text-slate-50 transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
+              className={`p-2 rounded-xl text-[#6B6258] hover:text-[#1F241F] transition-all duration-200 cursor-pointer hover:border-[#9A5B2F]/45 ${NEU_SM}`}
             >
               <Save size={15} />
             </button>
@@ -339,7 +339,7 @@ function App() {
             <button
               onClick={() => apiCall('load')}
               title="Load Checkpoint"
-              className={`p-2 rounded-xl text-slate-400 hover:text-slate-50 transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
+              className={`p-2 rounded-xl text-[#6B6258] hover:text-[#1F241F] transition-all duration-200 cursor-pointer hover:border-[#9A5B2F]/45 ${NEU_SM}`}
             >
               <FolderDown size={15} />
             </button>
@@ -347,21 +347,21 @@ function App() {
             <button
               onClick={exportTimelapse}
               title="Export Time-lapse"
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-50 transition-all duration-200 text-[14px] cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[#6B6258] hover:text-[#1F241F] transition-all duration-200 text-[14px] cursor-pointer hover:border-[#9A5B2F]/45 ${NEU_SM}`}
             >
               <CloudDownload size={15} />
               <span className="font-medium">Export</span>
             </button>
 
             {/* Search */}
-            <div className={`flex items-center gap-2 ${NEU_INSET} rounded-2xl px-3 py-2 w-56 focus-within:border-cyan-300/40 transition-all duration-200`}>
-              <Search size={13} className="text-slate-500 shrink-0" />
+            <div className={`flex items-center gap-2 ${NEU_INSET} rounded-2xl px-3 py-2 w-56 focus-within:border-[#9A5B2F]/55 transition-all duration-200`}>
+              <Search size={13} className="text-[#8B7C69] shrink-0" />
               <input
                 type="text"
                 placeholder="Search simulation…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none outline-none text-[15px] w-full text-slate-100 placeholder:text-slate-500"
+                className="bg-transparent border-none outline-none text-[15px] w-full text-[#1F241F] placeholder:text-[#8B7C69]"
               />
             </div>
 
@@ -371,7 +371,7 @@ function App() {
               target="_blank"
               rel="noopener noreferrer"
               title="View on GitHub"
-              className={`p-2 rounded-xl text-slate-400 hover:text-slate-50 transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
+              className={`p-2 rounded-xl text-[#6B6258] hover:text-[#1F241F] transition-all duration-200 cursor-pointer hover:border-[#9A5B2F]/45 ${NEU_SM}`}
             >
               <Github size={15} />
             </a>
@@ -393,7 +393,7 @@ function App() {
                   whileHover={{ y: -2 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                   className={`flex-1 flex gap-4 px-5 py-4 rounded-2xl cursor-default relative overflow-hidden
-                    transition-all duration-300 hover:border-cyan-300/20 hover:bg-[#172033]/92 hover:shadow-[0_28px_90px_rgba(8,47,73,0.38),0_0_34px_rgba(34,211,238,0.08)] ${NEU_RAISED}`}
+                    transition-all duration-300 hover:border-[#9A5B2F]/35 hover:bg-[#FFFDF6] hover:shadow-[0_22px_58px_rgba(61,48,31,0.16)] ${NEU_RAISED}`}
                 >
                   {/* Active gradient stripe */}
                   {isActive && (
@@ -402,7 +402,7 @@ function App() {
                   {/* Greek letter badge */}
                   <div className={`w-14 rounded-2xl shrink-0 flex items-center justify-center self-stretch
                     bg-gradient-to-br ${agent.gradient}
-                    shadow-[0_12px_32px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.22)]`}>
+                    shadow-[0_12px_28px_rgba(61,48,31,0.18),inset_0_1px_0_rgba(255,255,255,0.25)]`}>
                     <span className="text-white leading-none select-none"
                       style={{ fontSize: '34px', fontFamily: "'Georgia','Times New Roman',serif", fontWeight: 400 }}>
                       {GREEK_LETTERS[agent.name]}
@@ -412,24 +412,24 @@ function App() {
                   <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="font-display font-bold text-slate-50 text-[17px] leading-none truncate">{agent.name}</div>
-                        <div className={`text-[13px] mt-1 font-medium truncate ${isActive ? agent.color : 'text-slate-400'}`}>
+                        <div className="font-display font-bold text-[#1F241F] text-[17px] leading-none truncate">{agent.name}</div>
+                        <div className={`text-[13px] mt-1 font-medium truncate ${isActive ? agent.color : 'text-[#6B6258]'}`}>
                           {state.activity === 'Idle' ? agent.role : state.activity}
                         </div>
                       </div>
                       <div className={`shrink-0 px-2.5 py-1 rounded-full font-mono text-[11px] font-bold tracking-widest uppercase
-                        ${isActive ? `bg-gradient-to-r ${agent.gradient} text-white shadow-[0_0_22px_rgba(34,211,238,0.18)]` : `border border-white/10 bg-white/[0.04] text-slate-400`}`}>
+                        ${isActive ? `bg-gradient-to-r ${agent.gradient} text-white shadow-[0_12px_28px_rgba(154,91,47,0.18)]` : `border border-[#D8CBB7] bg-[#F8F2E8] text-[#6B6258]`}`}>
                         {isActive ? (state.activity || 'ACTIVE').slice(0, 9).toUpperCase() : 'STANDBY'}
                       </div>
                     </div>
                     {/* Terminal readout */}
                     <div className="flex items-center gap-2 mt-2.5">
-                      <code className="font-mono text-[12px] text-slate-500 shrink-0">#{agentId}</code>
-                      <span className="text-slate-700">·</span>
-                      <span className="font-mono text-[12px] text-slate-500">{cycleCount} cycles</span>
+                      <code className="font-mono text-[12px] text-[#8B7C69] shrink-0">#{agentId}</code>
+                      <span className="text-[#C8B89F]">·</span>
+                      <span className="font-mono text-[12px] text-[#8B7C69]">{cycleCount} cycles</span>
                       {isActive && (
                         <>
-                          <span className="text-slate-700">·</span>
+                          <span className="text-[#C8B89F]">·</span>
                           <div className="flex items-end gap-[2px]">
                             {[5, 8, 4, 10, 6, 9, 5, 7].map((h, i) => (
                               <motion.span key={i}
@@ -456,10 +456,10 @@ function App() {
               <div className={`h-full flex flex-col p-3 ${NEU_RAISED} rounded-2xl mr-2 overflow-hidden`}>
                 {/* Logo */}
                 <div className="flex items-center gap-2.5 px-2 mb-5 mt-1 shrink-0">
-                  <div className={`w-7 h-7 rounded-xl bg-gradient-to-br from-[#22D3EE] to-[#8B5CF6] flex items-center justify-center shrink-0 ${NEU_SM}`}>
+                  <div className={`w-7 h-7 rounded-xl bg-gradient-to-br from-[#9A5B2F] to-[#4F6F46] flex items-center justify-center shrink-0 ${NEU_SM}`}>
                     <Sparkles size={13} className="text-white" />
                   </div>
-                  <span className="font-display font-bold text-[16px] text-slate-50 truncate">Genesis</span>
+                  <span className="font-display font-bold text-[16px] text-[#1F241F] truncate">Genesis</span>
                 </div>
 
                 {/* Start / Stop CTA */}
@@ -468,10 +468,10 @@ function App() {
                     if (!isRunning && authReady && !user) { setSignInPrompt(true); return; }
                     apiCall(isRunning ? 'stop' : 'start');
                   }}
-                  className={`w-full py-2.5 rounded-2xl font-display font-semibold text-[15px] flex items-center justify-center gap-2 mb-6 shrink-0 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-300/40
+                  className={`w-full py-2.5 rounded-2xl font-display font-semibold text-[15px] flex items-center justify-center gap-2 mb-6 shrink-0 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#9A5B2F]/35
                     ${isRunning
-                      ? 'bg-gradient-to-r from-[#FB7185] to-[#F472B6] text-white shadow-[0_16px_36px_rgba(244,114,182,0.22)] hover:shadow-[0_20px_44px_rgba(244,114,182,0.3)] hover:-translate-y-0.5'
-                      : 'bg-gradient-to-r from-[#22D3EE] to-[#8B5CF6] text-white shadow-[0_16px_36px_rgba(34,211,238,0.18)] hover:shadow-[0_20px_44px_rgba(139,92,246,0.24)] hover:-translate-y-0.5'
+                      ? 'bg-gradient-to-r from-[#8A4B3B] to-[#C06F4E] text-white shadow-[0_14px_30px_rgba(138,75,59,0.22)] hover:shadow-[0_18px_38px_rgba(138,75,59,0.3)] hover:-translate-y-0.5'
+                      : 'bg-gradient-to-r from-[#9A5B2F] to-[#4F6F46] text-white shadow-[0_14px_30px_rgba(79,111,70,0.2)] hover:shadow-[0_18px_38px_rgba(154,91,47,0.24)] hover:-translate-y-0.5'
                     }`}
                 >
                   {isRunning
@@ -488,33 +488,33 @@ function App() {
                   <NavItem icon={<Users2   size={15}/>}   label="Factions"      active={activeTab === "Factions"}      onClick={() => setActiveTab("Factions")} />
                   <NavItem icon={<Ghost    size={15}/>}   label="The Void"      active={activeTab === "The Void"}      onClick={() => setActiveTab("The Void")} />
 
-                  <div className="mt-5 mb-2 px-3 text-[11px] font-display font-semibold text-slate-500 uppercase tracking-[0.18em]">Governance</div>
+                  <div className="mt-5 mb-2 px-3 text-[11px] font-display font-semibold text-[#8B7C69] uppercase tracking-[0.18em]">Governance</div>
                   <NavItem
-                    icon={<ScrollText size={15} className="text-cyan-300" />}
+                    icon={<ScrollText size={15} className="text-[#7A4E2D]" />}
                     label="Constitution"
                     badge={constitution.length.toString()}
                     active={activeTab === "Constitution"}
                     onClick={() => setActiveTab("Constitution")}
                   />
 
-                  <div className="mt-5 mb-2 px-3 text-[11px] font-display font-semibold text-slate-500 uppercase tracking-[0.18em]">World Domains</div>
-                  <NavItem icon={<Building2 size={15} className="text-violet-300" />} label="Infrastructure" badge={getObjectCount('box').toString()}      active={activeTab === "Infrastructure"} onClick={() => setActiveTab("Infrastructure")} />
-                  <NavItem icon={<Landmark  size={15} className="text-fuchsia-300" />} label="Monuments"      badge={getObjectCount('sphere').toString()}    active={activeTab === "Monuments"}      onClick={() => setActiveTab("Monuments")} />
-                  <NavItem icon={<Gem       size={15} className="text-amber-300" />} label="Materials"      badge={resources.toString()}                   active={activeTab === "Resources"}      onClick={() => setActiveTab("Resources")} />
-                  <NavItem icon={<TreePine  size={15} className="text-emerald-300" />} label="Nature"         badge={getObjectCount('cylinder').toString()}  active={activeTab === "Nature"}         onClick={() => setActiveTab("Nature")} />
-                  <NavItem icon={<Archive   size={15} className="text-rose-300" />} label="Archives"       badge={history.length.toString()}              active={activeTab === "Archives"}       onClick={() => setActiveTab("Archives")} />
+                  <div className="mt-5 mb-2 px-3 text-[11px] font-display font-semibold text-[#8B7C69] uppercase tracking-[0.18em]">World Domains</div>
+                  <NavItem icon={<Building2 size={15} className="text-[#7A4E2D]" />} label="Infrastructure" badge={getObjectCount('box').toString()}      active={activeTab === "Infrastructure"} onClick={() => setActiveTab("Infrastructure")} />
+                  <NavItem icon={<Landmark  size={15} className="text-[#5F5366]" />} label="Monuments"      badge={getObjectCount('sphere').toString()}    active={activeTab === "Monuments"}      onClick={() => setActiveTab("Monuments")} />
+                  <NavItem icon={<Gem       size={15} className="text-[#A36A21]" />} label="Materials"      badge={resources.toString()}                   active={activeTab === "Resources"}      onClick={() => setActiveTab("Resources")} />
+                  <NavItem icon={<TreePine  size={15} className="text-[#4F6F46]" />} label="Nature"         badge={getObjectCount('cylinder').toString()}  active={activeTab === "Nature"}         onClick={() => setActiveTab("Nature")} />
+                  <NavItem icon={<Archive   size={15} className="text-[#8A4B3B]" />} label="Archives"       badge={history.length.toString()}              active={activeTab === "Archives"}       onClick={() => setActiveTab("Archives")} />
                 </div>
 
                 {/* Resources gauge */}
                 <div className="mt-auto pt-4 shrink-0">
                   <div className="px-2 mb-4">
-                    <div className="flex justify-between text-[13px] text-slate-400 mb-2">
+                    <div className="flex justify-between text-[13px] text-[#6B6258] mb-2">
                       <span className="font-medium">Materials</span>
                       <span className="tabular-nums">{resources} / 1000</span>
                     </div>
                     <div className={`h-1.5 ${NEU_INSET_SM} rounded-full overflow-hidden`}>
                       <div
-                        className="h-full bg-gradient-to-r from-[#22D3EE] to-[#8B5CF6] rounded-full transition-all duration-500 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+                        className="h-full bg-gradient-to-r from-[#9A5B2F] to-[#4F6F46] rounded-full transition-all duration-500 shadow-[0_0_14px_rgba(154,91,47,0.22)]"
                         style={{ width: `${Math.min((resources / 1000) * 100, 100)}%` }}
                       />
                     </div>
@@ -531,24 +531,24 @@ function App() {
                             className={`w-8 h-8 rounded-full object-cover shrink-0 ${NEU_SM}`}
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="text-[15px] font-medium text-slate-100 truncate leading-tight">{user.displayName || 'Signed in'}</div>
-                            <div className="text-[13px] text-slate-500 truncate leading-tight">{user.email}</div>
+                            <div className="text-[15px] font-medium text-[#1F241F] truncate leading-tight">{user.displayName || 'Signed in'}</div>
+                            <div className="text-[13px] text-[#8B7C69] truncate leading-tight">{user.email}</div>
                           </div>
                           <button
                             onClick={signOut}
                             title="Sign out"
-                            className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-50 transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM} shrink-0`}
+                            className={`p-1.5 rounded-lg text-[#6B6258] hover:text-[#1F241F] transition-all duration-200 cursor-pointer hover:border-[#9A5B2F]/45 ${NEU_SM} shrink-0`}
                           >
                             <LogOut size={13} />
                           </button>
                         </>
                       ) : authLoading ? (
-                        <div className="text-[14px] text-slate-400">Loading...</div>
+                        <div className="text-[14px] text-[#6B6258]">Loading...</div>
                       ) : (
                         <div className="space-y-2 w-full">
                           <button
                             onClick={signInWithGoogle}
-                            className={`flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl text-slate-100 text-[14px] font-medium transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
+                            className={`flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl text-[#1F241F] text-[14px] font-medium transition-all duration-200 cursor-pointer hover:border-[#9A5B2F]/45 ${NEU_SM}`}
                           >
                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -560,7 +560,7 @@ function App() {
                           </button>
                           <button
                             onClick={signInWithGitHub}
-                            className={`flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl text-slate-100 text-[14px] font-medium transition-all duration-200 cursor-pointer hover:border-cyan-300/30 ${NEU_SM}`}
+                            className={`flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl text-[#1F241F] text-[14px] font-medium transition-all duration-200 cursor-pointer hover:border-[#9A5B2F]/45 ${NEU_SM}`}
                           >
                             <Github size={13} />
                             GitHub
@@ -575,8 +575,8 @@ function App() {
                           className={`w-8 h-8 rounded-full shrink-0 ${NEU_SM}`}
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="text-[15px] font-medium text-slate-100 truncate leading-tight">The Creator</div>
-                          <div className="text-[13px] text-slate-500 truncate leading-tight">Sign in to begin</div>
+                          <div className="text-[15px] font-medium text-[#1F241F] truncate leading-tight">The Creator</div>
+                          <div className="text-[13px] text-[#8B7C69] truncate leading-tight">Sign in to begin</div>
                         </div>
                       </>
                     )}
@@ -585,7 +585,7 @@ function App() {
               </div>
             </Panel>
 
-            <Separator className="shrink-0 bg-transparent hover:bg-cyan-300/10 data-[resize-handle-state=drag]:bg-cyan-300/20 transition-colors cursor-col-resize w-2 rounded-full" />
+            <Separator className="shrink-0 bg-transparent hover:bg-[#9A5B2F]/10 data-[resize-handle-state=drag]:bg-[#9A5B2F]/20 transition-colors cursor-col-resize w-2 rounded-full" />
 
             {/* Center: Thinking + World */}
             <Panel id="center" defaultSize={66} minSize={45} maxSize={80} className="min-w-0 flex flex-col overflow-hidden">
@@ -609,23 +609,23 @@ function App() {
                                 <motion.div className="absolute w-64 h-64 rounded-full"
                                   animate={{ rotate: isRunning ? 360 : 0 }}
                                   transition={isRunning ? { duration: 28, repeat: Infinity, ease: "linear" } : { duration: 1.5 }}
-                                  style={{ boxShadow: '0 0 90px rgba(34,211,238,0.12), inset 0 0 0 1px rgba(255,255,255,0.08)', opacity: 0.75 }}>
-                                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-cyan-300/60" />
+                                  style={{ boxShadow: '0 0 80px rgba(154,91,47,0.12), inset 0 0 0 1px rgba(154,91,47,0.16)', opacity: 0.75 }}>
+                                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-[#9A5B2F]/65" />
                                 </motion.div>
                                 <motion.div className="absolute w-48 h-48 rounded-full"
                                   animate={{ rotate: isRunning ? -360 : 0 }}
                                   transition={isRunning ? { duration: 20, repeat: Infinity, ease: "linear" } : { duration: 1.5 }}
-                                  style={{ boxShadow: 'inset 0 0 0 1px rgba(139,92,246,0.18), 0 0 70px rgba(139,92,246,0.10)', opacity: 0.7 }} />
+                                  style={{ boxShadow: 'inset 0 0 0 1px rgba(79,111,70,0.22), 0 0 70px rgba(79,111,70,0.12)', opacity: 0.7 }} />
                                 <motion.div className="absolute w-32 h-32 rounded-full"
                                   animate={{ rotate: isRunning ? 360 : 0 }}
                                   transition={isRunning ? { duration: 14, repeat: Infinity, ease: "linear" } : { duration: 1.5 }}
-                                  style={{ boxShadow: 'inset 0 0 0 1px rgba(34,211,238,0.2), 0 0 48px rgba(34,211,238,0.12)', opacity: 0.75 }}>
-                                  <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-violet-300/70" />
+                                  style={{ boxShadow: 'inset 0 0 0 1px rgba(154,91,47,0.18), 0 0 48px rgba(154,91,47,0.12)', opacity: 0.75 }}>
+                                  <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#D49A36]/75" />
                                 </motion.div>
                                 <div className="absolute w-16 h-16 rounded-full"
-                                  style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1), 0 0 36px rgba(34,211,238,0.12)', opacity: 0.75 }} />
+                                  style={{ boxShadow: 'inset 0 0 0 1px rgba(154,91,47,0.15), 0 0 36px rgba(79,111,70,0.12)', opacity: 0.75 }} />
                                 <div className="absolute w-6 h-6 rounded-full"
-                                  style={{ boxShadow: '0 0 28px rgba(34,211,238,0.28)', opacity: 0.9 }} />
+                                  style={{ boxShadow: '0 0 28px rgba(154,91,47,0.22)', opacity: 0.9 }} />
                               </div>
                               <ThinkingBar className="relative z-10 mx-8"
                                 text={isRunning ? 'Waiting for next agent...' : 'Simulation paused. Click to resume.'} />
@@ -644,14 +644,14 @@ function App() {
                         </div>
                       </Panel>
 
-                      <Separator className="shrink-0 bg-transparent hover:bg-cyan-300/10 data-[resize-handle-state=drag]:bg-cyan-300/20 transition-colors cursor-row-resize h-2 rounded-full" />
+                      <Separator className="shrink-0 bg-transparent hover:bg-[#9A5B2F]/10 data-[resize-handle-state=drag]:bg-[#9A5B2F]/20 transition-colors cursor-row-resize h-2 rounded-full" />
 
                       {/* World 3D */}
                       <Panel id="world" defaultSize={72} minSize={45} maxSize={90} className="min-h-0 flex flex-col overflow-hidden">
                         <div className={`h-full ${NEU_INSET_DEEP} rounded-2xl overflow-hidden flex flex-col mt-1`}>
-                          <div className="px-4 py-3 flex justify-between items-center border-b border-white/10 bg-[#020617]/72 backdrop-blur-sm shrink-0">
+                          <div className="px-4 py-3 flex justify-between items-center border-b border-[#3E352B] bg-[#181611]/88 backdrop-blur-sm shrink-0">
                             <h2 className="font-display font-semibold text-white/90 text-[17px] tracking-wide flex items-center gap-2.5">
-                              <motion.span className="w-2.5 h-2.5 rounded-full bg-[#22C55E] shadow-[0_0_18px_rgba(34,197,94,0.55)] inline-block shrink-0"
+                              <motion.span className="w-2.5 h-2.5 rounded-full bg-[#7A8F55] shadow-[0_0_16px_rgba(122,143,85,0.5)] inline-block shrink-0"
                                 animate={isRunning ? { scale: [1, 1.5, 1], opacity: [1, 0.4, 1] } : { scale: 1 }}
                                 transition={isRunning ? { duration: 1.4, repeat: Infinity } : {}} />
                               Live World Render
@@ -669,7 +669,7 @@ function App() {
                     </Group>
                   </Panel>
 
-            <Separator className="shrink-0 bg-transparent hover:bg-cyan-300/10 data-[resize-handle-state=drag]:bg-cyan-300/20 transition-colors cursor-col-resize w-2 rounded-full" />
+            <Separator className="shrink-0 bg-transparent hover:bg-[#9A5B2F]/10 data-[resize-handle-state=drag]:bg-[#9A5B2F]/20 transition-colors cursor-col-resize w-2 rounded-full" />
 
             {/* Sidebar */}
             <Panel id="sidebar" defaultSize={22} minSize={15} maxSize={40} className="min-w-0 pl-2 flex flex-col overflow-hidden">
@@ -705,9 +705,9 @@ function App() {
 // ──────────────────────────────────────────────
 // Shadow shorthand constants (repeated from above for TabContent scope)
 // ──────────────────────────────────────────────
-const S_RAISED   = "border border-white/10 bg-[#0F172A]/82 shadow-[0_22px_70px_rgba(0,0,0,0.36)] backdrop-blur-xl";
-const S_SM       = "border border-white/10 bg-white/[0.045] shadow-[0_12px_32px_rgba(0,0,0,0.26)]";
-const S_INSET_SM = "border border-white/10 bg-white/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]";
+const S_RAISED   = "border border-[#D8CBB7] bg-[#FFFDF6]/88 shadow-[0_18px_52px_rgba(61,48,31,0.13)] backdrop-blur-xl";
+const S_SM       = "border border-[#D8CBB7] bg-[#FFFDF6]/78 shadow-[0_10px_26px_rgba(61,48,31,0.1)]";
+const S_INSET_SM = "border border-[#D8CBB7] bg-[#F8F2E8]/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]";
 
 type AgentDef = { name: string; role: string; color: string; bg: string; border: string; gradient: string };
 
@@ -749,8 +749,8 @@ function TabContent({
   const getCount = getObjectCount;
 
   const renderHumanInput = () => (
-    <div className="shrink-0 pt-3 mt-2 border-t border-white/10">
-      <p className="text-[12px] text-slate-400 mb-2 font-medium">Message all agents</p>
+    <div className="shrink-0 pt-3 mt-2 border-t border-[#D8CBB7]">
+      <p className="text-[12px] text-[#6B6258] mb-2 font-medium">Message all agents</p>
       <div className="flex gap-2">
         <input
           type="text"
@@ -758,13 +758,13 @@ function TabContent({
           onChange={(e) => setHumanMessage?.(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendHumanMessage?.()}
           placeholder="Ask a question, give instructions..."
-          className={`flex-1 px-3 py-2.5 rounded-xl text-[14px] text-slate-100 ${S_INSET_SM} placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-300/35`}
+          className={`flex-1 px-3 py-2.5 rounded-xl text-[14px] text-[#1F241F] ${S_INSET_SM} placeholder:text-[#8B7C69] focus:outline-none focus:ring-2 focus:ring-[#9A5B2F]/35`}
           disabled={sendingHuman}
         />
         <button
           onClick={() => sendHumanMessage?.()}
           disabled={!humanMessage?.trim() || sendingHuman}
-          className={`px-4 py-2.5 rounded-xl flex items-center gap-1.5 text-[14px] font-medium transition-all ${(humanMessage?.trim() && !sendingHuman) ? 'bg-gradient-to-r from-[#22D3EE] to-[#8B5CF6] text-white shadow-[0_14px_32px_rgba(34,211,238,0.18)] hover:opacity-95 cursor-pointer' : 'border border-white/10 bg-white/[0.03] text-slate-600 cursor-not-allowed'}`}
+          className={`px-4 py-2.5 rounded-xl flex items-center gap-1.5 text-[14px] font-medium transition-all ${(humanMessage?.trim() && !sendingHuman) ? 'bg-gradient-to-r from-[#9A5B2F] to-[#4F6F46] text-white shadow-[0_14px_30px_rgba(79,111,70,0.18)] hover:opacity-95 cursor-pointer' : 'border border-[#D8CBB7] bg-[#F2EBDD] text-[#B4A58E] cursor-not-allowed'}`}
         >
           <Send size={14} />
           Send
@@ -777,7 +777,7 @@ function TabContent({
     <>
       <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-0">
         {filteredHistory.length === 0 ? (
-          <div className="text-[15px] text-slate-500 text-center mt-6 italic">
+          <div className="text-[15px] text-[#8B7C69] text-center mt-6 italic">
             {searchQuery ? 'No matches found.' : 'No activity yet.'}
           </div>
         ) : (
@@ -790,24 +790,24 @@ function TabContent({
                   key={`${entry.timestamp}-${i}`}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex gap-3 items-start p-3 rounded-xl ${S_INSET_SM} transition-shadow duration-200 ${isHuman ? 'ring-1 ring-cyan-300/30' : ''}`}
+                  className={`flex gap-3 items-start p-3 rounded-xl ${S_INSET_SM} transition-shadow duration-200 ${isHuman ? 'ring-1 ring-[#9A5B2F]/30' : ''}`}
                 >
                   {isHuman ? (
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#22D3EE] to-[#8B5CF6] shadow-[0_10px_24px_rgba(34,211,238,0.18),inset_0_1px_0_rgba(255,255,255,0.2)]">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#9A5B2F] to-[#4F6F46] shadow-[0_10px_24px_rgba(61,48,31,0.16),inset_0_1px_0_rgba(255,255,255,0.22)]">
                       <User size={12} className="text-white" />
                     </div>
                   ) : (
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br ${agent!.gradient} shadow-[0_10px_24px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.2)]`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br ${agent!.gradient} shadow-[0_10px_24px_rgba(61,48,31,0.16),inset_0_1px_0_rgba(255,255,255,0.22)]`}>
                       <span className="text-white text-[12px] font-display font-bold">{agent!.name[0]}</span>
                     </div>
                   )}
                   <div className="flex-1 min-w-0 pt-0.5">
                     <p className="text-[14px] leading-snug">
-                      <span className="font-display font-semibold text-slate-100">{entry.agentName}</span>{' '}
-                      <span className="text-slate-500">{isHuman ? 'intervened' : 'stated'}</span>
+                      <span className="font-display font-semibold text-[#1F241F]">{entry.agentName}</span>{' '}
+                      <span className="text-[#8B7C69]">{isHuman ? 'intervened' : 'stated'}</span>
                     </p>
-                    <p className="text-[14px] text-slate-300 mt-0.5 break-words leading-relaxed">"{entry.message}"</p>
-                    <span className="text-[12px] text-slate-500 tabular-nums mt-1 block">
+                    <p className="text-[14px] text-[#3B342C] mt-0.5 break-words leading-relaxed">"{entry.message}"</p>
+                    <span className="text-[12px] text-[#8B7C69] tabular-nums mt-1 block">
                       {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -825,19 +825,19 @@ function TabContent({
   const renderConstitution = () => (
     <div className="space-y-2.5 overflow-y-auto pr-1 max-h-[400px]">
       {constitution.length === 0 ? (
-        <div className="text-[14px] text-slate-500 text-center italic mt-4">No laws established yet.</div>
+        <div className="text-[14px] text-[#8B7C69] text-center italic mt-4">No laws established yet.</div>
       ) : (
         constitution.map((c, i) => {
           const agent = AGENTS.find((a: AgentDef) => a.name === c.agentName) || AGENTS[0];
           return (
             <div key={c.id} className={`rounded-xl p-3.5 ${S_INSET_SM}`}>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-[12px] font-display font-bold text-slate-100 uppercase tracking-wider">
+                <span className="text-[12px] font-display font-bold text-[#1F241F] uppercase tracking-wider">
                   Article {i + 1}
                 </span>
                 <span className={`text-[12px] font-semibold ${agent.color}`}>by {c.agentName}</span>
               </div>
-              <p className="text-[14px] text-slate-400 leading-relaxed">"{c.law}"</p>
+              <p className="text-[14px] text-[#6B6258] leading-relaxed">"{c.law}"</p>
             </div>
           );
         })
@@ -850,13 +850,13 @@ function TabContent({
     return (
       <div className="space-y-2 overflow-y-auto pr-1 max-h-[400px]">
         {items.length === 0 ? (
-          <div className="text-[14px] text-slate-500 text-center italic mt-4">No {label.toLowerCase()} yet.</div>
+          <div className="text-[14px] text-[#8B7C69] text-center italic mt-4">No {label.toLowerCase()} yet.</div>
         ) : (
           items.map((obj) => (
             <div key={obj.id} className={`rounded-xl p-3 ${S_INSET_SM} text-[14px]`}>
-              <span className="text-cyan-300 font-display font-semibold">{obj.type}</span>
-              {obj.creator && <span className="text-slate-500 ml-2">by {obj.creator}</span>}
-              {obj.position && <span className="text-slate-300 block mt-1 tabular-nums text-[13px]">[{obj.position.join(', ')}]</span>}
+              <span className="text-[#7A4E2D] font-display font-semibold">{obj.type}</span>
+              {obj.creator && <span className="text-[#8B7C69] ml-2">by {obj.creator}</span>}
+              {obj.position && <span className="text-[#3B342C] block mt-1 tabular-nums text-[13px]">[{obj.position.join(', ')}]</span>}
             </div>
           ))
         )}
@@ -865,7 +865,7 @@ function TabContent({
   };
 
   const panelClass = `rounded-2xl p-5 flex-1 flex flex-col min-h-0 ${S_RAISED}`;
-  const headingClass = "font-display font-bold text-slate-50 text-[15px] mb-4 flex items-center gap-2";
+  const headingClass = "font-display font-bold text-[#1F241F] text-[15px] mb-4 flex items-center gap-2";
 
   const content = (() => {
     switch (activeTab) {
@@ -873,7 +873,7 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.5)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#9A5B2F] shadow-[0_0_12px_rgba(154,91,47,0.28)] inline-block" />
               Recent Activity
             </h3>
             {renderActivityFeed()}
@@ -884,9 +884,9 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.5)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#9A5B2F] shadow-[0_0_12px_rgba(154,91,47,0.28)] inline-block" />
               Constitution Ledger
-              <span className={`ml-auto text-[13px] font-normal text-slate-400 tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>
+              <span className={`ml-auto text-[13px] font-normal text-[#6B6258] tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>
                 {constitution.length} Articles
               </span>
             </h3>
@@ -897,7 +897,7 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.45)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#4F6F46] shadow-[0_0_12px_rgba(79,111,70,0.28)] inline-block" />
               Timeline
             </h3>
             {renderActivityFeed()}
@@ -907,7 +907,7 @@ function TabContent({
         return (
           <div className={`${panelClass} overflow-y-auto`}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-violet-300 shadow-[0_0_14px_rgba(196,181,253,0.45)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#5F5366] shadow-[0_0_12px_rgba(95,83,102,0.24)] inline-block" />
               Activity by Faction
             </h3>
             <div className="space-y-3">
@@ -919,12 +919,12 @@ function TabContent({
                       <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${agent.gradient} flex items-center justify-center shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12)]`}>
                         <span className="text-white text-[12px] font-display font-bold">{agent.name[0]}</span>
                       </div>
-                      <span className="font-display font-semibold text-slate-100 text-[15px]">{agent.name}</span>
+                      <span className="font-display font-semibold text-[#1F241F] text-[15px]">{agent.name}</span>
                       <span className={`ml-auto text-[12px] tabular-nums ${agent.color} font-medium`}>{entries.length}</span>
                     </div>
                     <div className="space-y-1.5 max-h-[100px] overflow-y-auto">
                       {entries.slice(-4).reverse().map((e, i) => (
-                        <p key={i} className="text-[13px] text-slate-400 break-words leading-relaxed">"{e.message}"</p>
+                        <p key={i} className="text-[13px] text-[#6B6258] break-words leading-relaxed">"{e.message}"</p>
                       ))}
                     </div>
                   </div>
@@ -937,11 +937,11 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-slate-500 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#8B7C69] inline-block" />
               The Void
             </h3>
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-[15px] text-slate-500 italic text-center">Nothing has been discarded to the void.</p>
+              <p className="text-[15px] text-[#8B7C69] italic text-center">Nothing has been discarded to the void.</p>
             </div>
           </div>
         );
@@ -949,9 +949,9 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-violet-300 shadow-[0_0_14px_rgba(196,181,253,0.45)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#7A4E2D] shadow-[0_0_12px_rgba(122,78,45,0.26)] inline-block" />
               Infrastructure
-              <span className={`ml-auto text-[13px] font-normal text-slate-400 tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('box')} constructs</span>
+              <span className={`ml-auto text-[13px] font-normal text-[#6B6258] tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('box')} constructs</span>
             </h3>
             {renderObjectList('box', 'Infrastructure')}
           </div>
@@ -960,9 +960,9 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-fuchsia-300 shadow-[0_0_14px_rgba(240,171,252,0.45)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#5F5366] shadow-[0_0_12px_rgba(95,83,102,0.24)] inline-block" />
               Monuments
-              <span className={`ml-auto text-[13px] font-normal text-slate-400 tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('sphere')} constructs</span>
+              <span className={`ml-auto text-[13px] font-normal text-[#6B6258] tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('sphere')} constructs</span>
             </h3>
             {renderObjectList('sphere', 'Monuments')}
           </div>
@@ -971,9 +971,9 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.45)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#4F6F46] shadow-[0_0_12px_rgba(79,111,70,0.28)] inline-block" />
               Nature
-              <span className={`ml-auto text-[13px] font-normal text-slate-400 tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('cylinder')} constructs</span>
+              <span className={`ml-auto text-[13px] font-normal text-[#6B6258] tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{getCount('cylinder')} constructs</span>
             </h3>
             {renderObjectList('cylinder', 'Nature')}
           </div>
@@ -982,23 +982,23 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.45)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#A36A21] shadow-[0_0_12px_rgba(163,106,33,0.28)] inline-block" />
               Materials
             </h3>
             <div className="space-y-4">
               <div className={`rounded-xl p-4 ${S_INSET_SM}`}>
                 <div className="flex justify-between text-[15px] mb-3">
-                  <span className="text-slate-400 font-medium">Available</span>
-                  <span className="font-display font-semibold text-slate-100 tabular-nums">{resources} / 1000</span>
+                  <span className="text-[#6B6258] font-medium">Available</span>
+                  <span className="font-display font-semibold text-[#1F241F] tabular-nums">{resources} / 1000</span>
                 </div>
                 <div className={`h-2 rounded-full overflow-hidden ${S_INSET_SM}`}>
                   <div
-                    className="h-full bg-gradient-to-r from-[#22D3EE] to-[#8B5CF6] rounded-full transition-all duration-500 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+                    className="h-full bg-gradient-to-r from-[#9A5B2F] to-[#4F6F46] rounded-full transition-all duration-500 shadow-[0_0_14px_rgba(154,91,47,0.22)]"
                     style={{ width: `${(resources / 1000) * 100}%` }}
                   />
                 </div>
               </div>
-              <p className="text-[14px] text-slate-400">1 material consumed per construct built.</p>
+              <p className="text-[14px] text-[#6B6258]">1 material consumed per construct built.</p>
             </div>
           </div>
         );
@@ -1006,18 +1006,18 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-rose-300 shadow-[0_0_14px_rgba(253,164,175,0.45)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#8A4B3B] shadow-[0_0_12px_rgba(138,75,59,0.24)] inline-block" />
               Shared Archive
-              <span className={`ml-auto text-[13px] font-normal text-slate-400 tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{archive.length} entries</span>
+              <span className={`ml-auto text-[13px] font-normal text-[#6B6258] tabular-nums px-2 py-0.5 rounded-lg ${S_INSET_SM}`}>{archive.length} entries</span>
             </h3>
             <div className="space-y-1.5 overflow-y-auto pr-1 max-h-[300px]">
               {archive.length === 0 ? (
-                <div className="text-[14px] text-slate-500 italic">No archive entries yet.</div>
+                <div className="text-[14px] text-[#8B7C69] italic">No archive entries yet.</div>
               ) : (
                 archive.slice().reverse().map((a) => (
                   <div key={a.id} className={`rounded-xl px-3 py-2 ${S_INSET_SM} text-[13px]`}>
-                    <span className="text-cyan-300 font-display font-semibold">{a.key}:</span>{' '}
-                    <span className="text-slate-400 break-words">{a.value}</span>
+                    <span className="text-[#7A4E2D] font-display font-semibold">{a.key}:</span>{' '}
+                    <span className="text-[#6B6258] break-words">{a.value}</span>
                   </div>
                 ))
               )}
@@ -1025,15 +1025,15 @@ function TabContent({
             {images.length > 0 && (
               <>
                 <h3 className={`${headingClass} mt-5`}>
-                  <span className="w-2 h-2 rounded-full bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.45)] inline-block" />
+                  <span className="w-2 h-2 rounded-full bg-[#A36A21] shadow-[0_0_12px_rgba(163,106,33,0.28)] inline-block" />
                   Visual Artifacts
-                  <span className="text-slate-400 text-[13px] font-normal">({images.length})</span>
+                  <span className="text-[#6B6258] text-[13px] font-normal">({images.length})</span>
                 </h3>
                 <div className="grid grid-cols-2 gap-2.5">
                   {images.slice(-4).reverse().map((img) => (
                     <div key={img.id} className={`rounded-xl overflow-hidden ${S_SM}`}>
                       <img src={`data:image/png;base64,${img.imageBase64}`} alt={img.prompt} className="w-full h-16 object-cover" />
-                      <p className="text-[12px] text-slate-400 px-2 py-1 break-words leading-tight" title={img.prompt}>{img.prompt}</p>
+                      <p className="text-[12px] text-[#6B6258] px-2 py-1 break-words leading-tight" title={img.prompt}>{img.prompt}</p>
                     </div>
                   ))}
                 </div>
@@ -1045,7 +1045,7 @@ function TabContent({
         return (
           <div className={panelClass}>
             <h3 className={headingClass}>
-              <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.5)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#9A5B2F] shadow-[0_0_12px_rgba(154,91,47,0.28)] inline-block" />
               Recent Activity
             </h3>
             {renderActivityFeed()}
@@ -1069,10 +1069,10 @@ function NavItem({
   return (
     <div
       onClick={onClick}
-      className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 select-none focus-within:ring-2 focus-within:ring-cyan-300/30
+      className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 select-none focus-within:ring-2 focus-within:ring-[#9A5B2F]/30
         ${active
-          ? `border border-cyan-300/25 bg-cyan-300/10 text-cyan-100 font-semibold shadow-[0_0_22px_rgba(34,211,238,0.08)]`
-          : `text-slate-400 hover:text-slate-100 hover:bg-white/[0.04]`
+          ? `border border-[#9A5B2F]/30 bg-[#9A5B2F]/10 text-[#1F241F] font-semibold shadow-[0_10px_24px_rgba(154,91,47,0.08)]`
+          : `text-[#6B6258] hover:text-[#1F241F] hover:bg-[#F8F2E8]`
         }`}
     >
       <div className="flex items-center gap-2.5">
@@ -1081,7 +1081,7 @@ function NavItem({
       </div>
       {badge && (
         <span className={`text-[12px] tabular-nums font-medium px-1.5 py-0.5 rounded-lg min-w-[20px] text-center
-          ${active ? 'text-cyan-100 bg-cyan-300/15 border border-cyan-300/20' : 'text-slate-500 bg-white/[0.04] border border-white/10'}`}>
+          ${active ? 'text-[#7A4E2D] bg-[#9A5B2F]/12 border border-[#9A5B2F]/24' : 'text-[#8B7C69] bg-[#F2EBDD] border border-[#D8CBB7]'}`}>
           {badge}
         </span>
       )}
