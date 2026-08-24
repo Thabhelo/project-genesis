@@ -123,10 +123,22 @@ Respond ONLY with valid JSON:
       contents: prompt,
       config: {
         responseMimeType: "application/json",
+        // gemini-2.5-flash defaults to an automatic "thinking" budget, which
+        // can consume the entire output token budget on a prompt this size
+        // and leave the actual JSON answer empty. This is a short structured
+        // turn, not a reasoning task, so thinking buys nothing here — turning
+        // it off fixes empty responses and uses fewer tokens per call.
+        thinkingConfig: { thinkingBudget: 0 },
+        maxOutputTokens: 1024,
       }
     });
 
-    const parsed = JSON.parse(response.text);
+    const text = response.text;
+    if (!text) {
+      const finishReason = response.candidates?.[0]?.finishReason;
+      throw new Error(`Empty response from Gemini (finishReason: ${finishReason || 'unknown'})`);
+    }
+    const parsed = JSON.parse(text);
     parsed.speak = !!parsed.speak;
     parsed.writeToArchive = parsed.writeToArchive || null;
     parsed.generateImage = parsed.generateImage || null;
