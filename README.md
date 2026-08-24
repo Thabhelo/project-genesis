@@ -23,7 +23,7 @@ By maintaining a clear, immutable log of every societal decision, rule, and cons
 - **AI Policy Sandboxing:** Provides a safe, isolated environment to stress-test economic and legal frameworks before applying them to real-world AI systems or autonomous economies.
 
 ## Tech Stack
-- **Backend:** Node.js, Express, Google GenAI SDK (`gemini-2.5-flash`)
+- **Backend:** Node.js, Express, Google GenAI SDK (`gemini-2.5-flash-lite`)
 - **Frontend:** React, Vite, Tailwind CSS, React Three Fiber (Three.js)
 - **Database:** Firestore (with in-memory fallback when `serviceAccountKey.json` is absent)
 
