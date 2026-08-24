@@ -38,6 +38,13 @@ function getInitialPlanet() {
   };
 }
 
+// If nobody is watching a running simulation for this long, auto-pause it so
+// an abandoned tab doesn't keep burning Gemini/ElevenLabs/Imagen quota forever.
+const IDLE_PAUSE_MS = 10 * 60 * 1000;
+// States with no clients and not running are evicted from memory after this
+// long, so `userStates` doesn't grow unbounded across many visitors.
+const STATE_EVICT_MS = 60 * 60 * 1000;
+
 function createEmptyState() {
   return {
     worldHistory: [],
@@ -51,12 +58,15 @@ function createEmptyState() {
     isRunning: false,
     tickInterval: null,
     tickInProgress: false,
-    clients: []
+    clients: [],
+    lastClientDisconnectAt: null,
+    lastTouchedAt: Date.now()
   };
 }
 
 async function getOrCreateUserState(userId) {
   let state = userStates.get(userId);
+  if (state) state.lastTouchedAt = Date.now();
   if (!state) {
     state = createEmptyState();
     const loaded = await loadState(userId);
@@ -115,8 +125,52 @@ app.get('/api/stream', verifyAuth, async (req, res) => {
   })}\n\n`);
 
   state.clients.push(res);
+  state.lastClientDisconnectAt = null;
   req.on('close', () => {
     state.clients = state.clients.filter(c => c !== res);
+    if (state.clients.length === 0) state.lastClientDisconnectAt = Date.now();
+  });
+});
+
+// Public, read-only preview world so first-time visitors can watch the
+// simulation live before signing in. No auth required, no write access.
+// Ticks only while at least one viewer is connected (paused by the same
+// idle sweep that guards authenticated worlds) so it never burns API quota
+// unattended.
+const DEMO_USER_ID = 'public-demo';
+
+app.get('/api/demo/stream', async (req, res) => {
+  const state = await getOrCreateUserState(DEMO_USER_ID);
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  res.write(`event: init\ndata: ${JSON.stringify({
+    history: state.worldHistory,
+    objects: state.worldObjects,
+    constitution: state.worldConstitution,
+    archive: state.worldArchive,
+    resources: state.worldResources,
+    images: state.worldImages,
+    isRunning: state.isRunning,
+    status: state.currentStatus
+  })}\n\n`);
+
+  state.clients.push(res);
+  state.lastClientDisconnectAt = null;
+
+  if (!state.isRunning) {
+    state.isRunning = true;
+    state.currentStatus = "Public demo running";
+    broadcastToUser(state, 'stateChange', { isRunning: true });
+    runSimulationTick(DEMO_USER_ID);
+    state.tickInterval = setInterval(() => runSimulationTick(DEMO_USER_ID), TICK_RATE_MS);
+  }
+
+  req.on('close', () => {
+    state.clients = state.clients.filter(c => c !== res);
+    if (state.clients.length === 0) state.lastClientDisconnectAt = Date.now();
   });
 });
 
@@ -433,6 +487,26 @@ async function runSimulationTick(userId) {
 
   state.currentAgentIndex = (state.currentAgentIndex + 1) % agents.length;
   state.tickInProgress = false;
+  state.lastTouchedAt = Date.now();
+}
+
+// Guards against runaway API usage / unbounded memory growth: pause
+// simulations nobody is watching, and forget state for visitors who never
+// came back.
+function sweepIdleStates() {
+  const now = Date.now();
+  for (const [userId, state] of userStates) {
+    if (state.isRunning && state.clients.length === 0 && state.lastClientDisconnectAt
+        && now - state.lastClientDisconnectAt > IDLE_PAUSE_MS) {
+      state.isRunning = false;
+      clearInterval(state.tickInterval);
+      state.tickInterval = null;
+      state.currentStatus = "Auto-paused (no viewers)";
+    }
+    if (!state.isRunning && state.clients.length === 0 && now - state.lastTouchedAt > STATE_EVICT_MS) {
+      userStates.delete(userId);
+    }
+  }
 }
 
 const PORT = process.env.PORT || 3001;
@@ -440,4 +514,5 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
   if (isFirestore()) console.log('Firestore persistence enabled (per-user).');
+  setInterval(sweepIdleStates, 60 * 1000);
 });

@@ -1,8 +1,8 @@
 /* index.css — base resets only; design tokens live in App.css */
 
 :root {
-  --sans: 'DM Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font-synthesis: none;
@@ -19,7 +19,7 @@ code {
   font-size: 13px;
   line-height: 135%;
   padding: 2px 6px;
-  background: rgba(154, 91, 47, 0.1);
-  color: #7A4E2D;
+  background: rgba(204, 120, 92, 0.1);
+  color: #A85D44;
   border-radius: 6px;
 }

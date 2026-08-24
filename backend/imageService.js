@@ -7,7 +7,19 @@
 const { GoogleGenAI } = require('@google/genai');
 require('dotenv').config();
 
-const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+// Falls back to the first per-agent key when only GEMINI_API_KEYS is set.
+function resolveApiKey() {
+  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+  const keys = process.env.GEMINI_API_KEYS;
+  if (keys && keys.trim()) {
+    const first = keys.split(/[,|]/).map(k => k.trim()).filter(Boolean)[0];
+    if (first) return first;
+  }
+  return null;
+}
+
+const apiKey = resolveApiKey();
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 async function generateImage(prompt) {
   if (!ai) return null;

@@ -9,6 +9,10 @@ Built for the Gemini Live Agent Challenge, this project explores what happens wh
 - **Procedural World Building:** Agents output structured JSON to spawn 3D objects (boxes, spheres, cylinders) directly into the environment based on their decisions.
 - **Real-Time 3D Visualizer:** A React Three Fiber frontend that renders the agents' creations and displays a live feed of their dialogue.
 - **Tabula Rasa:** No pre-programmed rules. Watch as they naturally develop (or fail to develop) order, currency, or a constitution.
+- **Public Landing Page:** First-time visitors land on a minimal, animated overview page (three.js hero, live activity preview) before signing in — no account needed just to watch. See `/api/demo/stream` below.
+
+## Visitor experience
+The root of the frontend is a marketing-style landing page, not the dashboard. It streams a read-only preview from a single shared "public demo" world (`GET /api/demo/stream`, no auth) so anyone can watch agents talk and build in real time. That preview world only ticks while someone is actually watching it — the same idle-pause safeguard described below keeps it from burning API quota when nobody's around. Clicking **Enter the simulation** signs the visitor in (Google or GitHub) and gives them their own private world with full controls.
 
 ## Why This Matters: AI Policy & Alignment Testing
 In the current AI revolution, understanding emergent behaviors in multi-agent systems is critical for **AI Safety, Alignment, and Policy Formulation**. Project Genesis serves as a sandbox for researchers, ethicists, and policymakers to observe how autonomous agents negotiate, allocate resources, and establish governance without human intervention.
@@ -69,6 +73,13 @@ To persist simulation state across server restarts:
 5. Restart the backend. You should see: `Firestore persistence enabled.`
 
 The backend loads and saves state **per user** (keyed by Firebase UID). Each signed-in user has their own simulation world that persists across sessions.
+
+## API quota safety
+A few safeguards keep Gemini/ElevenLabs/Imagen usage from running away, especially with multiple visitors:
+- **Auto-pause on no viewers:** any world (a signed-in user's or the public demo) pauses itself after ~10 minutes with nobody watching, and resumes automatically when someone reconnects.
+- **Per-key backoff:** hitting a 429 on a given API key backs that key off for a growing cooldown instead of retrying every tick.
+- **Reused clients:** one SDK client per API key, created once, not per request.
+- **Stale state eviction:** worlds that are idle and unwatched for an hour are dropped from memory entirely.
 
 ## Deployment
 
