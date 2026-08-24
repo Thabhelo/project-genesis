@@ -119,15 +119,14 @@ Respond ONLY with valid JSON:
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash-lite',
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        // gemini-2.5-flash defaults to an automatic "thinking" budget, which
-        // can consume the entire output token budget on a prompt this size
-        // and leave the actual JSON answer empty. This is a short structured
-        // turn, not a reasoning task, so thinking buys nothing here — turning
-        // it off fixes empty responses and uses fewer tokens per call.
+        // This is a short structured JSON turn, not a reasoning task, so an
+        // automatic thinking budget just eats the output token allowance for
+        // nothing (and on some models can leave the actual JSON answer empty).
+        // Keeping it explicitly off is cheap insurance and uses fewer tokens.
         thinkingConfig: { thinkingBudget: 0 },
         maxOutputTokens: 1024,
       }
