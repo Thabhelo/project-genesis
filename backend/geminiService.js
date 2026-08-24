@@ -13,13 +13,42 @@ const API_KEYS = (() => {
   return fallback ? [fallback, fallback, fallback, fallback, fallback] : [];
 })();
 
+// Reuse one client per key instead of constructing a new SDK instance every tick.
+const clientCache = new Map();
 function getClientForAgent(agentIndex) {
   const key = API_KEYS[agentIndex % API_KEYS.length] || API_KEYS[0];
-  return key ? new GoogleGenAI({ apiKey: key }) : null;
+  if (!key) return null;
+  if (!clientCache.has(key)) {
+    clientCache.set(key, new GoogleGenAI({ apiKey: key }));
+  }
+  return clientCache.get(key);
 }
 
 function getAgentKeysCount() {
   return API_KEYS.length;
+}
+
+// Tracks consecutive rate-limit hits per key so callers can slow down instead
+// of hammering an already-throttled key every tick.
+const rateLimitState = new Map();
+
+function noteRateLimit(agentIndex) {
+  const key = API_KEYS[agentIndex % API_KEYS.length] || API_KEYS[0];
+  const entry = rateLimitState.get(key) || { hits: 0, until: 0 };
+  entry.hits += 1;
+  entry.until = Date.now() + Math.min(entry.hits * 15000, 5 * 60 * 1000);
+  rateLimitState.set(key, entry);
+}
+
+function noteSuccess(agentIndex) {
+  const key = API_KEYS[agentIndex % API_KEYS.length] || API_KEYS[0];
+  rateLimitState.delete(key);
+}
+
+function isRateLimited(agentIndex) {
+  const key = API_KEYS[agentIndex % API_KEYS.length] || API_KEYS[0];
+  const entry = rateLimitState.get(key);
+  return !!entry && Date.now() < entry.until;
 }
 
 async function generateAgentResponse(agentPersona, contextHistory, currentObjects, worldArchive, resourceCount, agentIndex = 0) {
@@ -75,6 +104,19 @@ Respond ONLY with valid JSON:
     return null;
   }
 
+  // Already backing off this key from a recent 429 — skip the call entirely
+  // rather than spending another request we know will be throttled.
+  if (isRateLimited(agentIndex)) {
+    return {
+      message: "Neural link interrupted. Awaiting reconnection.",
+      speak: false,
+      buildAction: { type: "none" },
+      declaredLaw: null,
+      writeToArchive: null,
+      generateImage: null
+    };
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -83,7 +125,7 @@ Respond ONLY with valid JSON:
         responseMimeType: "application/json",
       }
     });
-    
+
     const parsed = JSON.parse(response.text);
     parsed.speak = !!parsed.speak;
     parsed.writeToArchive = parsed.writeToArchive || null;
@@ -91,11 +133,13 @@ Respond ONLY with valid JSON:
     if (parsed.speak && !parsed.speakMessage && parsed.message) {
       parsed.speakMessage = parsed.message.slice(0, 80);
     }
+    noteSuccess(agentIndex);
     return parsed;
   } catch (error) {
     console.error("Error generating agent response:", error.message || error);
-    if (error.message && error.message.includes("429")) {
-      console.log("Rate limit hit. Using fallback.");
+    if (error.message && (error.message.includes("429") || error.message.includes("RESOURCE_EXHAUSTED"))) {
+      noteRateLimit(agentIndex);
+      console.log("Rate limit hit. Backing off this key and using fallback.");
       return {
         message: "Neural link interrupted. Awaiting reconnection.",
         speak: false,

@@ -2,14 +2,14 @@
  * Verify Firebase ID token from Authorization header or query param.
  * Attaches req.userId (Firebase UID) when valid.
  */
-const { admin } = require('./firebaseAdmin');
+const { admin, authConfigured } = require('./firebaseAdmin');
 
 async function verifyAuth(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
   if (!token) {
     return res.status(401).json({ message: 'Sign in required' });
   }
-  if (!admin?.auth) {
+  if (!authConfigured) {
     return res.status(503).json({ message: 'Auth not configured' });
   }
   try {
